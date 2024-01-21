@@ -33,6 +33,9 @@ class Tensor:
         self.grad_fn = grad_fn
         self.grad: Optional[ndarray] = None
 
+    def shape(self) -> Tuple[int, ...]:
+        return self.arr.shape
+
     def _create_new_tensor(
         self,
         o: Value,
