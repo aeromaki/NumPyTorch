@@ -36,7 +36,7 @@ class GradFn:
             if self.y.grad_fn is not None:
                 self.y.grad_fn(self.y.grad)
 
-class SumGradFn(GradFn):
+class AddGradFn(GradFn):
     def __init__(self, x: Tensor, y: Tensor) -> None:
         super().__init__(x, y, SumGradFn.f_d)
 

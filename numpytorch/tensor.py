@@ -62,7 +62,7 @@ class Tensor:
             self.grad_fn(self.grad)
 
     def __add__(self, o: Value) -> Tensor:
-        return self._create_new_tensor(o, lambda x, y: x+y, SumGradFn)
+        return self._create_new_tensor(o, lambda x, y: x+y, AddGradFn)
 
     def __radd__(self, o: Value) -> Tensor:
         return self.__add__(o)
