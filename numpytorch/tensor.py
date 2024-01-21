@@ -3,10 +3,16 @@ import numpy as np
 from numpy import ndarray
 from typing import Callable, List, Optional, Union
 from typing import SupportsFloat as Numeric
-from grad_fn import *
+from .grad_fn import *
 
 
-Value = Union[Numeric, Tensor]
+Value = Union[Numeric, ndarray, Tensor]
+
+def ndfy(some: Value) -> Union[Numeric, ndarray]:
+    if isinstance(some, Tensor):
+        return some.arr
+    else:
+        return some
 
 class Tensor:
     def __init__(
@@ -102,6 +108,39 @@ class Tensor:
 
     def __neg__(self) -> Tensor:
         return self.__rsub__(0)
+
+    def _assert_grad(self) -> None:
+        assert not self.requires_grad
+
+    def __iadd__(self, o: Value) -> Tensor:
+        self._assert_grad()
+        self.arr = self.arr + ndfy(o)
+        return self
+
+    def __isub__(self, o: Value) -> Tensor:
+        self._assert_grad()
+        self.arr = self.arr - ndfy(o)
+        return self
+
+    def __imul__(self, o: Value) -> Tensor:
+        self._assert_grad()
+        self.arr = self.arr * ndfy(o)
+        return self
+
+    def __itruediv__(self, o: Value) -> Tensor:
+        self._assert_grad()
+        self.arr = self.arr / ndfy(o)
+        return self
+
+    def __ipow__(self, o: Value) -> Tensor:
+        self._assert_grad()
+        self.arr = self.arr ** ndfy(o)
+        return self
+
+    def __imatmul__(self, o: Value) -> Tensor:
+        self._assert_grad()
+        self.arr = self.arr @ ndfy(o)
+        return self
 
     def __str__(self) -> str:
         arr = str(self.arr)
