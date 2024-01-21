@@ -38,7 +38,7 @@ class GradFn:
 
 class AddGradFn(GradFn):
     def __init__(self, x: Tensor, y: Tensor) -> None:
-        super().__init__(x, y, SumGradFn.f_d)
+        super().__init__(x, y, AddGradFn.f_d)
 
     @staticmethod
     def f_d(x: Tensor, y: Tensor, grad: ndarray) -> (ndarray, ndarray):
@@ -48,7 +48,7 @@ class AddGradFn(GradFn):
 
 class SubGradFn(GradFn):
     def __init__(self, x: Tensor, y: Tensor) -> None:
-        super().__init__(x, y, RSubGradFn.f_d)
+        super().__init__(x, y, SubGradFn.f_d)
 
     @staticmethod
     def f_d(x: Tensor, y: Tensor, grad: ndarray) -> (ndarray, ndarray):
