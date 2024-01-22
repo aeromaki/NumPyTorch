@@ -29,9 +29,9 @@ class Model:
 
     def __call__(self, x: Tensor) -> Tensor:
         out = self.layer0(x)
-        out = sigmoid(out)
+        out = relu(out)
         out = self.layer1(out)
-        out = sigmoid(out)
+        out = relu(out)
         out = self.layer2(out)
         return out
 
