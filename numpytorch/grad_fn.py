@@ -21,6 +21,10 @@ class GradFn:
 
     def propagate(self, grad: ndarray) -> None:
         d_x, d_y = self.f_d(self.x, self.y, grad)
+        if d_x.shape != self.x.arr.shape:
+            d_x = d_x.sum(0)
+        if d_y.shape != self.y.arr.shape:
+            d_y = d_y.sum(0)
         if self.x.requires_grad:
             if self.x.grad is not None:
                 self.x.grad += d_x
@@ -135,5 +139,5 @@ class RMatmulGradFn(GradFn):
     @staticmethod
     def f_d(x: Tensor, y: Tensor, grad: ndarray) -> (ndarray, ndarray):
         d_x = np.moveaxis(y.arr, -1, -2) @ grad
-        d_y = grad @ np.moveaxis(x.arr.T, -1, -2)
+        d_y = grad @ np.moveaxis(x.arr, -1, -2)
         return d_x, d_y

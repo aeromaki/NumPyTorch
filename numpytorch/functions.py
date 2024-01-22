@@ -27,3 +27,6 @@ def rand(*args, requires_grad: bool = False, **kwargs) -> Tensor:
 
 def exp(x: Tensor) -> Tensor:
     return math.e ** x
+
+def sigmoid(x: Tensor) -> Tensor:
+    return 1 / (1 + exp(-x))

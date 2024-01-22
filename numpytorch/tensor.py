@@ -66,9 +66,8 @@ class Tensor:
         return new_tensor
 
     def backward(self) -> None:
-        self.grad = np.ones_like(self.arr, dtype=float)
-        if self.grad is not None:
-            self.grad_fn(self.grad)
+        grad = np.ones_like(self.arr, dtype=float)
+        self.grad_fn(grad)
 
     def __add__(self, o: Value) -> Tensor:
         return self._create_new_tensor(o, lambda x, y: x+y, AddGradFn)

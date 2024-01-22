@@ -1,1 +1,1 @@
-autograd in NumPy
+simple autograd in NumPy
