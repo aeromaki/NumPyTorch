@@ -58,16 +58,19 @@ train_y = f_label(train_x)
 
 
 model = Model()
-optimizer = SGDOptimizer(model.parameters(), lr=1e-05)
+optimizer = SGDOptimizer(model.parameters(), lr=1e-04)
 def criterion(y_pred: Tensor, y: Tensor) -> Tensor:
     return mean((y_pred - y) ** 2)
 
 
+batch_size = 500
+n_print = 20
+
 buf = 0
-for i in range(1, 5000):
+for i in range(1, 2000):
     optimizer.zero_grad()
 
-    idx = np.random.permutation(train_y.shape[0])[:1000]
+    idx = np.random.permutation(train_y.shape[0])[:batch_size]
     x = Tensor(train_x[idx])
     y = Tensor(train_y[idx])
     y_pred = model(x)
@@ -76,7 +79,7 @@ for i in range(1, 5000):
     loss.backward()
     optimizer.step()
 
-    buf += loss.arr.item(0)
-    if i % 20 == 0:
-        print(buf / 20)
+    buf += loss.arr.item()
+    if i % n_print == 0:
+        print(buf / n_print)
         buf = 0
