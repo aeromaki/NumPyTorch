@@ -9,12 +9,35 @@ from .grad_fn import *
 Value = Union[Numeric, ndarray, Tensor]
 
 def ndfy(some: Value) -> Union[Numeric, ndarray]:
+    """
+    Convert a value to a NumPy array if it is a Tensor, otherwise return the value itself.
+
+    Parameters:
+        some (Value): The value to be converted.
+
+    Returns:
+        Union[Numeric, ndarray]: The converted value.
+    """
     if isinstance(some, Tensor):
         return some.arr
     else:
         return some
 
 class Tensor:
+    """
+    A Tensor is a multi-dimensional array used for storing data and performing operations,
+    especially in the context of neural networks and computational graphs. This class
+    provides an implementation of tensors with automatic differentiation capabilities.
+
+    Attributes:
+        arr (ndarray): The underlying data of the tensor stored as a NumPy array.
+        requires_grad (bool): If set to True, the tensor will be tracked for gradient computation.
+        is_leaf (bool): Indicates whether the tensor is a leaf node in the computation graph.
+                        A leaf node is not created from any operation on other tensors.
+        grad_fn (Optional[Callable[[ndarray], None]]): The gradient function associated with
+                        the tensor, used to compute gradients during backpropagation.
+        grad (Optional[ndarray]): Stores the gradient of the tensor after backpropagation.
+    """
     def __init__(
         self,
         arr: Union[Numeric, List, ndarray, Tensor],
@@ -45,20 +68,38 @@ class Tensor:
         operation: Callable[[ndarray, ndarray], ndarray],
         grad_fn: GradFn
     ) -> Tensor:
+        """
+        Creates a new tensor by performing an operation on the current tensor and another tensor.
+        Also updates:
+            - requires_grad: If either of the tensors requires gradient, the new tensor will also require gradient.
+            - is_leaf: If neither of the tensors requires gradient, the new tensor will not require gradient.
+            - grad_fn: The gradient function for backpropagation.
+
+        Args:
+            o (Value): The other tensor to perform the operation with.
+            operation (Callable[[ndarray, ndarray], ndarray]): The operation to perform on the tensors.
+            grad_fn (GradFn): The gradient function for backpropagation.
+
+        Returns:
+            Tensor: The new tensor resulting from the operation.
+        """
         if not isinstance(o, Tensor):
             o = Tensor(o)
 
-        new_arr = operation(self.arr, o.arr)
+        new_arr = operation(self.arr, o.arr) # Apply the operation on the arrays
 
+        # If either of the tensors requires gradient, the new tensor will also require gradient and will not be a leaf.
         if self.requires_grad or o.requires_grad:
             new_requires_grad = True
             new_is_leaf = False
             new_grad_fn = grad_fn(self, o)
         else:
+            # If neither of the tensors requires gradient, the new tensor will not require gradient and will be a leaf.
             new_requires_grad = False
             new_is_leaf = True
             new_grad_fn = None
 
+        # Create the new tensor with the result of the operation
         new_tensor = Tensor(
             arr=new_arr,
             requires_grad=new_requires_grad,
@@ -69,10 +110,25 @@ class Tensor:
         return new_tensor
 
     def backward(self) -> None:
+        """
+        Performs backpropagation by computing the gradient of the tensor.
+
+        Returns:
+            None
+        """
         grad = np.ones_like(self.arr, dtype=float)
         self.grad_fn(grad)
 
     def __add__(self, o: Value) -> Tensor:
+        """
+        Adds two tensors element-wise.
+
+        Args:
+            o (Value): The tensor to be added.
+
+        Returns:
+            Tensor: A new tensor containing the element-wise sum of the two tensors.
+        """
         return self._create_new_tensor(o, lambda x, y: x+y, AddGradFn)
 
     def __radd__(self, o: Value) -> Tensor:
