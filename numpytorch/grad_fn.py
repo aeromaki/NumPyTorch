@@ -14,8 +14,8 @@ class GradFn:
         self.tensors = args
         self.f_d = f_d
 
-    def __call__(self, *args) -> None:
-        self.propagate(*args)
+    def __call__(self, grad: ndarray) -> None:
+        self.propagate(grad)
 
     def propagate(self, grad: ndarray) -> None:
         grads = self.f_d(*self.tensors, grad)

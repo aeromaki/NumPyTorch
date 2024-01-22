@@ -20,7 +20,7 @@ class Tensor:
         arr: Union[Numeric, List, ndarray, Tensor],
         requires_grad: bool = False,
         is_leaf: bool = True,
-        grad_fn: Optional[Callable] = None
+        grad_fn: Optional[[ndarray], None] = None
     ) -> None:
         if isinstance(arr, Tensor):
             self.arr = arr.arr
