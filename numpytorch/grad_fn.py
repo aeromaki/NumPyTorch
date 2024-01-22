@@ -8,41 +8,31 @@ Tensor = "Tensor"
 class GradFn:
     def __init__(
         self,
-        x: Tensor,
-        y: Tensor,
-        f_d: Callable[[Tensor, Tensor, ndarray], Tuple[ndarray, ndarray]]
+        f_d: Callable[[Tensor, ..., ndarray], Tuple[ndarray, ...]],
+        *args: Tensor
     ) -> None:
-        self.x = x
-        self.y = y
+        self.tensors = args
         self.f_d = f_d
 
     def __call__(self, *args) -> None:
         self.propagate(*args)
 
     def propagate(self, grad: ndarray) -> None:
-        d_x, d_y = self.f_d(self.x, self.y, grad)
-        if d_x.shape != self.x.arr.shape:
-            d_x = d_x.sum(0)
-        if d_y.shape != self.y.arr.shape:
-            d_y = d_y.sum(0)
-        if self.x.requires_grad:
-            if self.x.grad is not None:
-                self.x.grad += d_x
-            else:
-                self.x.grad = d_x
-            if self.x.grad_fn is not None:
-                self.x.grad_fn(self.x.grad)
-        if self.y.requires_grad:
-            if self.y.grad is not None:
-                self.y.grad += d_y
-            else:
-                self.y.grad = d_y
-            if self.y.grad_fn is not None:
-                self.y.grad_fn(self.y.grad)
+        grads = self.f_d(*self.tensors, grad)
+        for x, dx in zip(self.tensors, grads):
+            if dx.shape != x.arr.shape:
+                dx = dx.sum(0)
+            if x.requires_grad:
+                if x.grad is not None:
+                    x.grad += dx
+                else:
+                    x.grad = dx
+                if x.grad_fn is not None:
+                    x.grad_fn(x.grad)
 
 class AddGradFn(GradFn):
     def __init__(self, x: Tensor, y: Tensor) -> None:
-        super().__init__(x, y, AddGradFn.f_d)
+        super().__init__(AddGradFn.f_d, x, y)
 
     @staticmethod
     def f_d(x: Tensor, y: Tensor, grad: ndarray) -> (ndarray, ndarray):
@@ -52,7 +42,7 @@ class AddGradFn(GradFn):
 
 class SubGradFn(GradFn):
     def __init__(self, x: Tensor, y: Tensor) -> None:
-        super().__init__(x, y, SubGradFn.f_d)
+        super().__init__(SubGradFn.f_d, x, y)
 
     @staticmethod
     def f_d(x: Tensor, y: Tensor, grad: ndarray) -> (ndarray, ndarray):
@@ -62,7 +52,7 @@ class SubGradFn(GradFn):
 
 class RSubGradFn(GradFn):
     def __init__(self, x: Tensor, y: Tensor) -> None:
-        super().__init__(x, y, RSubGradFn.f_d)
+        super().__init__(RSubGradFn.f_d, x, y)
 
     @staticmethod
     def f_d(x: Tensor, y: Tensor, grad: ndarray) -> (ndarray, ndarray):
@@ -72,7 +62,7 @@ class RSubGradFn(GradFn):
 
 class MulGradFn(GradFn):
     def __init__(self, x: Tensor, y: Tensor) -> None:
-        super().__init__(x, y, MulGradFn.f_d)
+        super().__init__(MulGradFn.f_d, x, y)
 
     @staticmethod
     def f_d(x: Tensor, y: Tensor, grad: ndarray) -> (ndarray, ndarray):
@@ -82,7 +72,7 @@ class MulGradFn(GradFn):
 
 class DivGradFn(GradFn):
     def __init__(self, x: Tensor, y: Tensor) -> None:
-        super().__init__(x, y, DivGradFn.f_d)
+        super().__init__(DivGradFn.f_d, x, y)
 
     @staticmethod
     def f_d(x: Tensor, y: Tensor, grad: ndarray) -> (ndarray, ndarray):
@@ -92,7 +82,7 @@ class DivGradFn(GradFn):
 
 class RDivGradFn(GradFn):
     def __init__(self, x: Tensor, y: Tensor) -> None:
-        super().__init__(x, y, RDivGradFn.f_d)
+        super().__init__(RDivGradFn.f_d, x, y)
 
     @staticmethod
     def f_d(x: Tensor, y: Tensor, grad: ndarray) -> (ndarray, ndarray):
@@ -102,7 +92,7 @@ class RDivGradFn(GradFn):
 
 class PowGradFn(GradFn):
     def __init__(self, x: Tensor, y: Tensor) -> None:
-        super().__init__(x, y, PowGradFn.f_d)
+        super().__init__(PowGradFn.f_d, x, y)
 
     @staticmethod
     def f_d(x: Tensor, y: Tensor, grad: ndarray) -> (ndarray, ndarray):
@@ -113,7 +103,7 @@ class PowGradFn(GradFn):
 
 class RPowGradFn(GradFn):
     def __init__(self, x: Tensor, y: Tensor) -> None:
-        super().__init__(x, y, RPowGradFn.f_d)
+        super().__init__(RPowGradFn.f_d, x, y)
 
     @staticmethod
     def f_d(x: Tensor, y: Tensor, grad: ndarray) -> (ndarray, ndarray):
@@ -124,7 +114,7 @@ class RPowGradFn(GradFn):
 
 class MatmulGradFn(GradFn):
     def __init__(self, x: Tensor, y: Tensor) -> None:
-        super().__init__(x, y, MatmulGradFn.f_d)
+        super().__init__(MatmulGradFn.f_d, x, y)
 
     @staticmethod
     def f_d(x: Tensor, y: Tensor, grad: ndarray) -> (ndarray, ndarray):
@@ -134,7 +124,7 @@ class MatmulGradFn(GradFn):
 
 class RMatmulGradFn(GradFn):
     def __init__(self, x: Tensor, y: Tensor) -> None:
-        super().__init__(x, y, RMatmulGradFn.f_d)
+        super().__init__(RMatmulGradFn.f_d, x, y)
 
     @staticmethod
     def f_d(x: Tensor, y: Tensor, grad: ndarray) -> (ndarray, ndarray):
