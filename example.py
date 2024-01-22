@@ -25,21 +25,25 @@ class Model:
     def __init__(self) -> None:
         self.layer0 = Linear(4, 20)
         self.layer1 = Linear(20, 20)
-        self.layer2 = Linear(20, 1)
+        self.layer2 = Linear(20, 20)
+        self.layer3 = Linear(20, 1)
 
     def __call__(self, x: Tensor) -> Tensor:
         out = self.layer0(x)
         out = relu(out)
         out = self.layer1(out)
-        out = relu(out)
+        out = sigmoid(out)
         out = self.layer2(out)
+        out = tanh(out)
+        out = self.layer3(out)
         return out
 
     def parameters(self) -> List[Tensor]:
         return [
             *self.layer0.parameters(),
             *self.layer1.parameters(),
-            *self.layer2.parameters()
+            *self.layer2.parameters(),
+            *self.layer3.parameters()
         ]
 
 

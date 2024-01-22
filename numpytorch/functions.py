@@ -30,7 +30,7 @@ def rand(*args, requires_grad: bool = False, **kwargs) -> Tensor:
 def exp(x: Tensor) -> Tensor:
     return math.e ** x
 
-def sigmoid(x: Tensor) -> Tensor:
+def sigmoid_naive(x: Tensor) -> Tensor:
     return 1 / (1 + exp(-x))
 
 def _new_tensor(x: Tensor, arr: ndarray, grad_fn: Type[GradFn]) -> Tensor:
@@ -41,6 +41,9 @@ def _new_tensor(x: Tensor, arr: ndarray, grad_fn: Type[GradFn]) -> Tensor:
         grad_fn=grad_fn(x) if x.requires_grad else None
     )
 
+def sigmoid(x: Tensor) -> Tensor:
+    return _new_tensor(x, 1 / (1 + np.exp(-x.arr)), SigmoidGradFn)
+
 def sum(x: Tensor) -> Tensor:
     return _new_tensor(x, np.sum(x.arr), SumGradFn)
 
@@ -49,3 +52,6 @@ def mean(x: Tensor) -> Tensor:
 
 def relu(x: Tensor) -> Tensor:
     return _new_tensor(x, np.clip(x.arr, a_min=0, a_max=None), ReLUGradFn)
+
+def tanh(x: Tensor) -> Tensor:
+    return _new_tensor(x, np.tanh(x.arr), TanhGradFn)
