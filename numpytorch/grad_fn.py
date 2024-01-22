@@ -30,6 +30,15 @@ class GradFn:
                 if x.grad_fn is not None:
                     x.grad_fn(x.grad)
 
+class SumGradFn(GradFn):
+    def __init__(self, x: Tensor) -> None:
+        super().__init__(SumGradFn.f_d, x)
+
+    @staticmethod
+    def f_d(x: Tensor, grad: ndarray) -> (ndarray,):
+        d_x = np.ones_like(x.arr) * grad
+        return (d_x,)
+
 class AddGradFn(GradFn):
     def __init__(self, x: Tensor, y: Tensor) -> None:
         super().__init__(AddGradFn.f_d, x, y)

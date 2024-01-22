@@ -60,7 +60,7 @@ train_y = f_label(train_x)
 model = Model()
 optimizer = SGDOptimizer(model.parameters(), lr=1e-05)
 def criterion(y_pred: Tensor, y: Tensor) -> Tensor:
-    return (y_pred - y) ** 2
+    return mean((y_pred - y) ** 2)
 
 
 buf = 0
@@ -72,11 +72,11 @@ for i in range(1, 5000):
     y = Tensor(train_y[idx])
     y_pred = model(x)
 
-    loss = criterion(y_pred, y) / 1000
+    loss = criterion(y_pred, y)
     loss.backward()
     optimizer.step()
 
-    buf += loss.arr.mean()
+    buf += loss.arr.item(0)
     if i % 20 == 0:
-        print(buf % 20)
+        print(buf / 20)
         buf = 0

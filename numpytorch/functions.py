@@ -2,6 +2,7 @@ import numpy as np
 from numpy import ndarray
 import math
 from .tensor import Tensor, Value
+from .grad_fn import SumGradFn
 
 
 def tensor(
@@ -30,3 +31,9 @@ def exp(x: Tensor) -> Tensor:
 
 def sigmoid(x: Tensor) -> Tensor:
     return 1 / (1 + exp(-x))
+
+def sum(x: Tensor) -> Tensor:
+    return Tensor(np.sum(x.arr), requires_grad=True, is_leaf=False, grad_fn=SumGradFn(x))
+
+def mean(x: Tensor) -> Tensor:
+    return sum(x) / x.arr.size
