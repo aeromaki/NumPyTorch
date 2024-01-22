@@ -36,6 +36,9 @@ class Tensor:
     def shape(self) -> Tuple[int, ...]:
         return self.arr.shape
 
+    def size(self) -> int:
+        return self.arr.size
+
     def _create_new_tensor(
         self,
         o: Value,

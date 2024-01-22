@@ -36,4 +36,4 @@ def sum(x: Tensor) -> Tensor:
     return Tensor(np.sum(x.arr), requires_grad=True, is_leaf=False, grad_fn=SumGradFn(x))
 
 def mean(x: Tensor) -> Tensor:
-    return sum(x) / x.arr.size
+    return sum(x) / x.size()
