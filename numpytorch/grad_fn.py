@@ -48,7 +48,6 @@ class ReLUGradFn(GradFn):
         d_x = (x.arr > 0) * grad
         return (d_x,)
 
-
 class AddGradFn(GradFn):
     def __init__(self, x: Tensor, y: Tensor) -> None:
         super().__init__(AddGradFn.f_d, x, y)
