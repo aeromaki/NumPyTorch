@@ -119,6 +119,14 @@ class Tensor:
         grad = np.ones_like(self.arr, dtype=float)
         self.grad_fn(grad)
 
+
+    """
+    Concept of magic methods:
+    In Python, magic methods are special methods that are invoked by the interpreter to perform basic operations.
+    For example, the __add__ method is invoked when the + operator is used on two objects.
+
+    For more information, see https://rszalski.github.io/magicmethods/
+    """
     def __add__(self, o: Value) -> Tensor:
         """
         Adds two tensors element-wise.
