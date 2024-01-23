@@ -17,9 +17,9 @@ class GradFn(ABC):
     def __call__(self, y: 'Tensor') -> None:
         self.propagate(y)
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def f_d(cls, *args: 'Tensor') -> Tuple[ndarray, ...]:
+    def f_d(*args: 'Tensor') -> Tuple[ndarray, ...]:
         pass
 
     def propagate(self, y: 'Tensor') -> None:
@@ -40,8 +40,8 @@ class SumGradFn(GradFn):
     def __init__(self, x: 'Tensor') -> None:
         super().__init__(x)
 
-    @classmethod
-    def f_d(cls, *args: 'Tensor') -> Tuple[ndarray]:
+    @staticmethod
+    def f_d(*args: 'Tensor') -> Tuple[ndarray]:
         x, y = args
         dx = np.ones_like(x.arr) * y.grad
         return (dx,)
@@ -50,8 +50,8 @@ class ReLUGradFn(GradFn):
     def __init__(self, x: 'Tensor') -> None:
         super().__init__(x)
 
-    @classmethod
-    def f_d(cls, *args: 'Tensor') -> Tuple[ndarray]:
+    @staticmethod
+    def f_d(*args: 'Tensor') -> Tuple[ndarray]:
         x, y = args
         assert y.grad is not None
 
@@ -62,8 +62,8 @@ class SigmoidGradFn(GradFn):
     def __init__(self, x: 'Tensor') -> None:
         super().__init__(x)
 
-    @classmethod
-    def f_d(cls, *args: 'Tensor') -> Tuple[ndarray]:
+    @staticmethod
+    def f_d(*args: 'Tensor') -> Tuple[ndarray]:
         x, y = args
         assert y.grad is not None
 
@@ -74,8 +74,8 @@ class TanhGradFn(GradFn):
     def __init__(self, x: 'Tensor') -> None:
         super().__init__(x)
 
-    @classmethod
-    def f_d(cls, *args: 'Tensor') -> Tuple[ndarray]:
+    @staticmethod
+    def f_d(*args: 'Tensor') -> Tuple[ndarray]:
         x, y = args
         assert y.grad is not None
 
@@ -86,8 +86,8 @@ class AddGradFn(GradFn):
     def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
         super().__init__(x0, x1)
 
-    @classmethod
-    def f_d(cls, *args: 'Tensor') -> Tuple[ndarray, ndarray]:
+    @staticmethod
+    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 
@@ -99,8 +99,8 @@ class SubGradFn(GradFn):
     def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
         super().__init__(x0, x1)
 
-    @classmethod
-    def f_d(cls, *args: 'Tensor') -> Tuple[ndarray, ndarray]:
+    @staticmethod
+    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 
@@ -112,8 +112,8 @@ class RSubGradFn(GradFn):
     def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
         super().__init__(x0, x1)
 
-    @classmethod
-    def f_d(cls, *args: 'Tensor') -> Tuple[ndarray, ndarray]:
+    @staticmethod
+    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 
@@ -125,8 +125,8 @@ class MulGradFn(GradFn):
     def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
         super().__init__(x0, x1)
 
-    @classmethod
-    def f_d(cls, *args: 'Tensor') -> Tuple[ndarray, ndarray]:
+    @staticmethod
+    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 
@@ -138,8 +138,8 @@ class DivGradFn(GradFn):
     def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
         super().__init__(x0, x1)
 
-    @classmethod
-    def f_d(cls, *args: 'Tensor') -> Tuple[ndarray, ndarray]:
+    @staticmethod
+    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 
@@ -151,8 +151,8 @@ class RDivGradFn(GradFn):
     def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
         super().__init__(x0, x1)
 
-    @classmethod
-    def f_d(cls, *args: 'Tensor') -> Tuple[ndarray, ndarray]:
+    @staticmethod
+    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 
@@ -164,8 +164,8 @@ class PowGradFn(GradFn):
     def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
         super().__init__(x0, x1)
 
-    @classmethod
-    def f_d(cls, *args: 'Tensor') -> Tuple[ndarray, ndarray]:
+    @staticmethod
+    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 
@@ -178,8 +178,8 @@ class RPowGradFn(GradFn):
     def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
         super().__init__(x0, x1)
 
-    @classmethod
-    def f_d(cls, *args: 'Tensor') -> Tuple[ndarray, ndarray]:
+    @staticmethod
+    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 
@@ -192,8 +192,8 @@ class MatmulGradFn(GradFn):
     def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
         super().__init__(x0, x1)
 
-    @classmethod
-    def f_d(cls, *args: 'Tensor') -> Tuple[ndarray, ndarray]:
+    @staticmethod
+    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 
@@ -205,8 +205,8 @@ class RMatmulGradFn(GradFn):
     def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
         super().__init__(x0, x1)
 
-    @classmethod
-    def f_d(cls, *args: 'Tensor') -> Tuple[ndarray, ndarray]:
+    @staticmethod
+    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 

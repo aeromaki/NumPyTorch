@@ -23,10 +23,10 @@ class Linear:
 
 class Model:
     def __init__(self) -> None:
-        self.layer0 = Linear(4, 20)
-        self.layer1 = Linear(20, 20)
-        self.layer2 = Linear(20, 20)
-        self.layer3 = Linear(20, 1)
+        self.layer0 = Linear(4, 50)
+        self.layer1 = Linear(50, 50)
+        self.layer2 = Linear(50, 50)
+        self.layer3 = Linear(50, 1)
 
     def __call__(self, x: Tensor) -> Tensor:
         out = self.layer0(x)
@@ -53,16 +53,16 @@ def f_label(x: ndarray) -> ndarray:
     return (w * x ** e).sum(-1, keepdims=True)
 
 train_x = np.mgrid[
-    -1:1:1,
-    -1:1:1,
-    -1:1:1,
-    -1:1:1,
+    -2:2:1,
+    -2:2:1,
+    -2:2:1,
+    -2:2:1,
 ].reshape(-1, 4)
 train_y = f_label(train_x)
 
 
 model = Model()
-optimizer = SGDOptimizer(model.parameters(), lr=1e-04)
+optimizer = SGDOptimizer(model.parameters(), lr=1e-03)
 def criterion(y_pred: Tensor, y: Tensor) -> Tensor:
     return mean((y_pred - y) ** 2)
 
