@@ -4,7 +4,7 @@ from numpy import ndarray
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
-    Any, Callable, Optional, Tuple
+    Callable, Optional, Tuple
 )
 if TYPE_CHECKING:
     from .tensor import Tensor

@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from numpy import ndarray
-from typing import Callable, List, Optional, Type, Union
+from typing import Callable, Optional, Type, Union
 from typing import SupportsFloat as Numeric
 from .grad_fn import *
 
