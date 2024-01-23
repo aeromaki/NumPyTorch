@@ -36,7 +36,7 @@ class Tensor:
         is_leaf: bool = True,
         grad_fn: Optional[GradFn] = None
     ) -> None:
-        self.arr = ndfy(arr)
+        self.arr = ndfy(arr).copy()
         self.requires_grad = requires_grad
         self.is_leaf = is_leaf
         self.grad_fn = grad_fn

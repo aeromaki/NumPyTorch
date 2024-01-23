@@ -1,89 +1,29 @@
-import warnings
-from typing import List
-import numpy as np
-from numpy import ndarray
-from numpytorch import Tensor
-from numpytorch.functions import *
+import numpytorch as npt
+from numpytorch import Tensor, rand, nn
 from numpytorch.optim import SGDOptimizer
 
+class CustomModel(nn.Module):
+    def __init__(self):
+        self.seq = nn.Sequential(
+            nn.Linear(5, 10),
+            nn.ReLU(),
+            nn.Linear(10, 5),
+            nn.ReLU(),
+            nn.Linear(5, 1)
+        )
 
-warnings.filterwarnings("ignore")
+    def forward(self, x: Tensor) -> Tensor:
+        return self.seq(x)
 
+model = CustomModel()
 
-class Linear:
-    def __init__(self, d_in: int, d_out: int) -> None:
-        self.weight = rand(d_in, d_out, requires_grad=True)
-        self.bias = rand(d_out, requires_grad=True)
+optimizer = SGDOptimizer(model.parameters(), lr=1e-04)
 
-    def __call__(self, x: Tensor) -> Tensor:
-        return x @ self.weight + self.bias
-
-    def parameters(self) -> List[Tensor]:
-        return [self.weight, self.bias]
-
-class Model:
-    def __init__(self) -> None:
-        self.layer0 = Linear(4, 50)
-        self.layer1 = Linear(50, 50)
-        self.layer2 = Linear(50, 50)
-        self.layer3 = Linear(50, 1)
-
-    def __call__(self, x: Tensor) -> Tensor:
-        out = self.layer0(x)
-        out = relu(out)
-        out = self.layer1(out)
-        out = sigmoid(out)
-        out = self.layer2(out)
-        out = tanh(out)
-        out = self.layer3(out)
-        return out
-
-    def parameters(self) -> List[Tensor]:
-        return [
-            *self.layer0.parameters(),
-            *self.layer1.parameters(),
-            *self.layer2.parameters(),
-            *self.layer3.parameters()
-        ]
-
-
-def f_label(x: ndarray) -> ndarray:
-    w = np.random.rand(4)
-    e = np.array([1, 2, 1, 2])
-    return (w * x ** e).sum(-1, keepdims=True)
-
-train_x = np.mgrid[
-    -2:2:1,
-    -2:2:1,
-    -2:2:1,
-    -2:2:1,
-].reshape(-1, 4)
-train_y = f_label(train_x)
-
-
-model = Model()
-optimizer = SGDOptimizer(model.parameters(), lr=1e-03)
-def criterion(y_pred: Tensor, y: Tensor) -> Tensor:
-    return mean((y_pred - y) ** 2)
-
-
-batch_size = 500
-n_print = 20
-
-buf = 0
-for i in range(1, 2000):
+for i in range(100):
     optimizer.zero_grad()
-
-    idx = np.random.permutation(train_y.shape[0])[:batch_size]
-    x = Tensor(train_x[idx])
-    y = Tensor(train_y[idx])
-    y_pred = model(x)
-
-    loss = criterion(y_pred, y)
-    loss.backward()
+    x = rand(20, 30, 5)
+    y = model(x)
+    b = npt.mean(y)
+    b.backward()
     optimizer.step()
-
-    buf += loss.arr.item()
-    if i % n_print == 0:
-        print(buf / n_print)
-        buf = 0
+    print(b.arr.item())

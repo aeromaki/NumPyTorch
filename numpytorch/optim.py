@@ -1,8 +1,8 @@
-from typing import Iterable
+from typing import List
 from .tensor import Tensor
 
 class SGDOptimizer:
-    def __init__(self, params: Iterable[Tensor], lr: float) -> None:
+    def __init__(self, params: List[Tensor], lr: float) -> None:
         """
         Initializes a stochastic gradient descent (SGD) optimizer.
 
@@ -11,7 +11,7 @@ class SGDOptimizer:
             - The parameters are updated by subtracting the gradient multiplied by the learning rate.
 
         Args:
-            params (Iterable[Tensor]): The parameters to optimize.
+            params (List[Tensor]): The parameters to optimize.
             lr (float): The learning rate.
 
         Returns:

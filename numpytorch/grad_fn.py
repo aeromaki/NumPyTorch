@@ -26,7 +26,7 @@ class GradFn(ABC):
         grads: Tuple[ndarray, ...] = self.f_d(*self.tensors, y)
         for x, dx in zip(self.tensors, grads):
             if dx.shape != x.shape:
-                dx = dx.sum(0)
+                dx = dx.reshape(-1, dx.shape[-1]).sum(0)
             if x.requires_grad:
                 if x.grad is not None:
                     x.grad += dx
