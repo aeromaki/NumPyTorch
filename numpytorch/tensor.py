@@ -1,27 +1,18 @@
 from __future__ import annotations
 import numpy as np
 from numpy import ndarray
-from typing import Callable, List, Optional, Union
+from typing import Callable, List, Optional, Type, Union
 from typing import SupportsFloat as Numeric
 from .grad_fn import *
 
 
-Value = Union[Numeric, ndarray, Tensor]
+Value = Union[Numeric, 'Tensor']
 
-def ndfy(some: Value) -> Union[Numeric, ndarray]:
-    """
-    Convert a value to a NumPy array if it is a Tensor, otherwise return the value itself.
-
-    Parameters:
-        some (Value): The value to be converted.
-
-    Returns:
-        Union[Numeric, ndarray]: The converted value.
-    """
+def ndfy(some: Value) -> ndarray:
     if isinstance(some, Tensor):
         return some.arr
     else:
-        return some
+        return np.array(some)
 
 class Tensor:
     """
@@ -40,17 +31,12 @@ class Tensor:
     """
     def __init__(
         self,
-        arr: Union[Numeric, List, ndarray, Tensor],
+        arr: Union[Numeric, ndarray, Tensor],
         requires_grad: bool = False,
         is_leaf: bool = True,
         grad_fn: Optional[GradFn] = None
     ) -> None:
-        if isinstance(arr, Tensor):
-            self.arr = arr.arr
-        elif isinstance(arr, ndarray):
-            self.arr = arr
-        else:
-            self.arr = np.array(arr)
+        self.arr = ndfy(arr)
         self.requires_grad = requires_grad
         self.is_leaf = is_leaf
         self.grad_fn = grad_fn
@@ -66,7 +52,7 @@ class Tensor:
         self,
         o: Value,
         operation: Callable[[ndarray, ndarray], ndarray],
-        grad_fn: GradFn
+        grad_fn: Type[GradFn]
     ) -> Tensor:
         """
         Creates a new tensor by performing an operation on the current tensor and another tensor.
@@ -116,7 +102,7 @@ class Tensor:
         Returns:
             None
         """
-        assert self.arr.shape == ()
+        assert self.arr.shape == () and self.grad_fn is not None
         self.grad = np.ones(())
         self.grad_fn(self)
 

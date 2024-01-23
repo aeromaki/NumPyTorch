@@ -28,7 +28,8 @@ class SGDOptimizer:
             None
         """
         for param in self.params:
-            param.arr -= param.grad * self.lr
+            if param.grad is not None:
+                param.arr -= param.grad * self.lr
 
     def zero_grad(self) -> None:
         """

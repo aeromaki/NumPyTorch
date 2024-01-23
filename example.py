@@ -53,10 +53,10 @@ def f_label(x: ndarray) -> ndarray:
     return (w * x ** e).sum(-1, keepdims=True)
 
 train_x = np.mgrid[
-    -1:1:0.1,
-    -1:1:0.1,
-    -1:1:0.1,
-    -1:1:0.1,
+    -1:1:1,
+    -1:1:1,
+    -1:1:1,
+    -1:1:1,
 ].reshape(-1, 4)
 train_y = f_label(train_x)
 

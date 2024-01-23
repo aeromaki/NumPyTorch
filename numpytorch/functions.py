@@ -2,8 +2,8 @@ import numpy as np
 from numpy import ndarray
 import math
 from typing import Type
-from .grad_fn import *
 from .tensor import Tensor, Value
+from .grad_fn import *
 
 
 def tensor(
