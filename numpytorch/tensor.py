@@ -116,8 +116,9 @@ class Tensor:
         Returns:
             None
         """
-        grad = np.ones_like(self.arr, dtype=float)
-        self.grad_fn(grad)
+        assert self.arr.shape == ()
+        self.grad = np.ones(())
+        self.grad_fn(self)
 
 
     """
