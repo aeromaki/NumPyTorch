@@ -43,7 +43,7 @@ def sum(x: Tensor) -> Tensor:
     return _new_tensor(x, np.sum(x.arr), SumGradFn)
 
 def mean(x: Tensor) -> Tensor:
-    return sum(x) / x.size()
+    return sum(x) / x.size
 
 def relu(x: Tensor) -> Tensor:
     return _new_tensor(x, np.clip(x.arr, a_min=0, a_max=None), ReLUGradFn)

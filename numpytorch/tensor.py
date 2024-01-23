@@ -42,9 +42,11 @@ class Tensor:
         self.grad_fn = grad_fn
         self.grad: Optional[ndarray] = None
 
+    @property
     def shape(self) -> Tuple[int, ...]:
         return self.arr.shape
 
+    @property
     def size(self) -> int:
         return self.arr.size
 

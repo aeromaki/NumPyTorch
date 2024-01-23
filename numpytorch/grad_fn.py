@@ -25,7 +25,7 @@ class GradFn(ABC):
     def propagate(self, y: 'Tensor') -> None:
         grads: Tuple[ndarray, ...] = self.f_d(*self.tensors, y)
         for x, dx in zip(self.tensors, grads):
-            if dx.shape != x.shape():
+            if dx.shape != x.shape:
                 dx = dx.sum(0)
             if x.requires_grad:
                 if x.grad is not None:
