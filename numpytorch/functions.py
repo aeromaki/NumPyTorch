@@ -2,7 +2,7 @@ import numpy as np
 from numpy import ndarray
 import math
 from typing import Type
-from .tensor import Tensor, Value
+from .tensor import *
 from .grad_fn import *
 
 
@@ -10,12 +10,7 @@ def tensor(
     v: Value,
     requires_grad: bool = False
 ) -> Tensor:
-    if isinstance(v, Tensor):
-        v = v.arr.copy()
-    elif isinstance(v, ndarray):
-        pass
-    else:
-        v = np.array(v)
+    v = ndfy(v).copy()
     return Tensor(v, requires_grad=requires_grad)
 
 def zeros(*args, requires_grad: bool = False, **kwargs) -> Tensor:
