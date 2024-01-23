@@ -25,7 +25,7 @@ class Tensor:
         requires_grad (bool): If set to True, the tensor will be tracked for gradient computation.
         is_leaf (bool): Indicates whether the tensor is a leaf node in the computation graph.
                         A leaf node is not created from any operation on other tensors.
-        grad_fn (Optional[Callable[[ndarray], None]]): The gradient function associated with
+        grad_fn (Optional[GradFn]): The gradient function associated with
                         the tensor, used to compute gradients during backpropagation.
         grad (Optional[ndarray]): Stores the gradient of the tensor after backpropagation.
     """
