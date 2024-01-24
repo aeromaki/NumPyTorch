@@ -8,8 +8,11 @@ class Parameter(Tensor):
     def __init__(self, x: Tensor) -> None:
         super().__init__(arr=x, requires_grad=True)
 
+    def _init_weight(*args: int) -> Tensor:
+        return tensor(np.random.normal(scale=1 / args[0], size=args))
+
     def new(*args: int) -> Parameter:
-        return Parameter(rand(*args))
+        return Parameter(Parameter._init_weight(*args))
 
 class Module:
     def _forward_unimplemented(*args, **kwargs) -> None:
@@ -37,14 +40,6 @@ class Linear(Module):
     def forward(self, x: Tensor) -> Tensor:
         return x @ self.w + self.b
 
-class ReLU(Module):
-    def forward(self, x: Tensor) -> Tensor:
-        return relu(x)
-
-class Sigmoid(Module):
-    def forward(self, x: Tensor) -> Tensor:
-        return sigmoid(x)
-
 class Sequential(Module):
     def __init__(self, *args) -> None:
         for i, module in enumerate(args):
@@ -54,3 +49,17 @@ class Sequential(Module):
         for layer in self.__dict__.values():
             x = layer(x)
         return x
+
+class ReLU(Module):
+    def forward(self, x: Tensor) -> Tensor:
+        return relu(x)
+
+class Sigmoid(Module):
+    def forward(self, x: Tensor) -> Tensor:
+        return sigmoid(x)
+
+class CrossEntropyLoss(Module):
+    def forward(self, p: Tensor, q: Tensor) -> Tensor:
+        if p.shape != q.shape:
+            q = one_hot(q, p.shape[-1])
+        return mean(cross_entropy(p, q))

@@ -8,9 +8,11 @@ from .grad_fn import *
 
 Value = Union[Numeric, 'Tensor']
 
-def ndfy(some: Value) -> ndarray:
+def ndfy(some: Union[Value, ndarray]) -> ndarray:
     if isinstance(some, Tensor):
         return some.arr
+    elif isinstance(some, ndarray):
+        return some
     else:
         return np.array(some)
 
@@ -53,6 +55,9 @@ class Tensor:
     @property
     def ndim(self) -> int:
         return self.arr.ndim
+
+    def item(self) -> Numeric:
+        return self.arr.item()
 
     def _create_new_tensor(
         self,
@@ -108,8 +113,9 @@ class Tensor:
         Returns:
             None
         """
-        assert self.arr.shape == () and self.grad_fn is not None
-        self.grad = np.ones(())
+        assert self.grad_fn is not None
+
+        self.grad = np.ones_like(self.arr)
         self.grad_fn(self)
 
 

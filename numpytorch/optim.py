@@ -1,7 +1,8 @@
 from typing import Sequence
 from .tensor import Tensor
 
-class SGDOptimizer:
+
+class SGD:
     def __init__(self, params: Sequence[Tensor], lr: float) -> None:
         """
         Initializes a stochastic gradient descent (SGD) optimizer.

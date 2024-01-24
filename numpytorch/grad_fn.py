@@ -4,7 +4,7 @@ from numpy import ndarray
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
-    Callable, Optional, Tuple
+    Callable, Optional, Tuple, Union
 )
 if TYPE_CHECKING:
     from .tensor import Tensor
@@ -17,15 +17,14 @@ class GradFn(ABC):
     def __call__(self, y: 'Tensor') -> None:
         self.propagate(y)
 
-    @staticmethod
     @abstractmethod
-    def f_d(*args: 'Tensor') -> Tuple[ndarray, ...]:
+    def f_d(self, *args: 'Tensor') -> Tuple[ndarray, ...]:
         pass
 
     @staticmethod
     def _handle_broadcast(x: 'Tensor', dx: ndarray) -> ndarray:
         if dx.ndim > x.ndim:
-            assert dx.shape[-x.ndim:] == x.shape
+            assert dx.shape[-x.ndim:] == x.shape or x.shape == ()
             dx = dx.reshape(-1, *x.shape).sum(0)
         else:
             assert dx.ndim == x.ndim
@@ -37,9 +36,11 @@ class GradFn(ABC):
     def propagate(self, y: 'Tensor') -> None:
         grads: Tuple[ndarray, ...] = self.f_d(*self.tensors, y)
         for x, dx in zip(self.tensors, grads):
-            if dx.shape != x.shape:
-                dx = self._handle_broadcast(x, dx)
             if x.requires_grad:
+                if np.isnan(dx).any():
+                    breakpoint()
+                if x.shape != dx.shape:
+                    dx = self._handle_broadcast(x, dx)
                 if x.grad is not None:
                     x.grad += dx
                 else:
@@ -49,13 +50,25 @@ class GradFn(ABC):
 
 
 class SumGradFn(GradFn):
-    def __init__(self, x: 'Tensor') -> None:
+    def __init__(
+        self,
+        x: 'Tensor',
+        axis: Optional[Union[int, Tuple[int, ...]]] = None,
+        keepdims: bool = False
+    ) -> None:
         super().__init__(x)
+        self.axis = axis
+        self.keepdims = keepdims
 
-    @staticmethod
-    def f_d(*args: 'Tensor') -> Tuple[ndarray]:
+    def f_d(self, *args: 'Tensor') -> Tuple[ndarray]:
         x, y = args
-        dx = np.ones_like(x.arr) * y.grad
+        assert y.grad is not None
+
+        if self.axis is not None and not self.keepdims:
+            grad = np.expand_dims(y.grad, self.axis)
+        else:
+            grad = y.grad
+        dx = np.ones_like(x.arr) * grad
         return (dx,)
 
 class ReLUGradFn(GradFn):
@@ -68,6 +81,18 @@ class ReLUGradFn(GradFn):
         assert y.grad is not None
 
         dx = (x.arr > 0) * y.grad
+        return (dx,)
+
+class LogGradFn(GradFn):
+    def __init__(self, x: 'Tensor') -> None:
+        super().__init__(x)
+
+    @staticmethod
+    def f_d(*args: 'Tensor') -> Tuple[ndarray]:
+        x, y = args
+        assert y.grad is not None
+
+        dx = y.grad / x.arr
         return (dx,)
 
 class SigmoidGradFn(GradFn):
@@ -192,10 +217,11 @@ class PowGradFn(GradFn):
     def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
+        assert (x0.arr > 0).all()
 
         b = x0.arr**x1.arr * y.grad
-        dx0 = b * x1.arr / x0.arr
-        dx1 = b * np.log(x0.arr)
+        dx0 = x1.arr / x0.arr * b
+        dx1 = np.log(x0.arr) * b
         return dx0, dx1
 
 class RPowGradFn(GradFn):
@@ -206,10 +232,11 @@ class RPowGradFn(GradFn):
     def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
+        assert (x1.arr > 0).all()
 
         b = x1.arr**x0.arr * y.grad
-        dx0 = b * np.log(x1.arr)
-        dx1 = b * x0.arr / x1.arr
+        dx0 = np.log(x1.arr) * b
+        dx1 = x0.arr / x1.arr * b
         return dx0, dx1
 
 class MatmulGradFn(GradFn):

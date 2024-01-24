@@ -1,13 +1,13 @@
 import numpy as np
 from numpy import ndarray
 import math
-from typing import Tuple, Type
+from typing import Any, Optional, Tuple, Type, Union
 from .tensor import *
 from .grad_fn import *
 
 
 def tensor(
-    v: Value,
+    v: Union[Value, ndarray],
     requires_grad: bool = False
 ) -> Tensor:
     v = ndfy(v).copy()
@@ -28,22 +28,33 @@ def exp(x: Tensor) -> Tensor:
 def sigmoid_naive(x: Tensor) -> Tensor:
     return 1 / (1 + exp(-x))
 
-def _new_tensor(x: Tensor, arr: ndarray, grad_fn: Type[GradFn]) -> Tensor:
+def _new_tensor(x: Tensor, arr: ndarray, grad_fn: Type[GradFn], **kwargs: Any) -> Tensor:
     return Tensor(
         arr,
         requires_grad=x.requires_grad,
         is_leaf=not x.requires_grad,
-        grad_fn=grad_fn(x) if x.requires_grad else None
+        grad_fn=grad_fn(x, **kwargs) if x.requires_grad else None
     )
+
+def log(x: Tensor) -> Tensor:
+    return _new_tensor(x, np.log(x.arr), LogGradFn)
 
 def sigmoid(x: Tensor) -> Tensor:
     return _new_tensor(x, 1 / (1 + np.exp(-x.arr)), SigmoidGradFn)
 
-def sum(x: Tensor) -> Tensor:
-    return _new_tensor(x, np.sum(x.arr), SumGradFn)
+def sum(
+    x: Tensor,
+    axis: Optional[Union[int, Tuple[int, ...]]] = None,
+    keepdims: bool = False
+) -> Tensor:
+    return _new_tensor(x, np.sum(x.arr, axis, keepdims=keepdims), SumGradFn,
+                        axis=axis, keepdims=keepdims)
 
-def mean(x: Tensor) -> Tensor:
-    return sum(x) / x.size
+def mean(x: Tensor, axis: Optional[int] = None) -> Tensor:
+    if axis is None:
+        return sum(x) / x.size
+    else:
+        return sum(x, axis) / x.shape[axis]
 
 def relu(x: Tensor) -> Tensor:
     return _new_tensor(x, np.clip(x.arr, a_min=0, a_max=None), ReLUGradFn)
@@ -51,5 +62,11 @@ def relu(x: Tensor) -> Tensor:
 def tanh(x: Tensor) -> Tensor:
     return _new_tensor(x, np.tanh(x.arr), TanhGradFn)
 
+def cross_entropy(p: Tensor, q: Tensor) -> Tensor:
+    return -sum(q * log(p), -1)
+
 def reshape(x: Tensor, shape: Tuple[int, ...]) -> Tensor:
     return _new_tensor(x, x.arr.reshape(shape), ReshapeGradFn)
+
+def one_hot(x: Tensor, n_label: int) -> Tensor:
+    return tensor(np.eye(n_label)[x.arr])
