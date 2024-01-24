@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Any, Callable, List
-from .tensor import Tensor
+from .tensor import Tensor, Value
 from .functions import *
 
 
@@ -36,7 +36,7 @@ class Module:
 class Linear(Module):
     def __init__(self, d_in: int, d_out: int, bias: bool = True) -> None:
         self.w = Parameter.new(d_in, d_out)
-        self.b = Parameter(zeros(d_out)) if bias else 0
+        self.b: Value = Parameter(zeros(d_out)) if bias else 0
 
     def forward(self, x: Tensor) -> Tensor:
         return x @ self.w + self.b
