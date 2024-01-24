@@ -9,7 +9,7 @@ class Parameter(Tensor):
         super().__init__(arr=x, requires_grad=True)
 
     def _init_weight(*args: int) -> Tensor:
-        return tensor(np.random.normal(scale=1 / args[0], size=args))
+        return tensor(np.random.normal(scale=(2 / args[0])**0.5, size=args))
 
     def new(*args: int) -> Parameter:
         return Parameter(Parameter._init_weight(*args))
@@ -62,4 +62,5 @@ class CrossEntropyLoss(Module):
     def forward(self, p: Tensor, q: Tensor) -> Tensor:
         if p.shape != q.shape:
             q = one_hot(q, p.shape[-1])
-        return mean(cross_entropy(p, q))
+        p_softmax = softmax(p)
+        return mean(cross_entropy(p_softmax, q))

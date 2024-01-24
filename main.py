@@ -5,10 +5,10 @@ from numpy import ndarray
 from tqdm import tqdm
 from sklearn.metrics import f1_score
 
-from numpytorch import tensor, nn, optim
+from numpytorch import tensor, nn, optim, mean
 
 
-from assignment import MNISTClassificationModel, softmax
+from assignment import MNISTClassificationModel
 
 
 def get_mnist() -> Tuple[ndarray, ndarray, ndarray, ndarray]:
@@ -34,8 +34,8 @@ if __name__ == "__main__":
     n_batch = 32
     n_iter = 100000
     n_print = 100
-    n_val = 1000
-    lr = 1e-03
+    n_val = 2000
+    lr = 1e-05
 
     model = MNISTClassificationModel()
     criterion = nn.CrossEntropyLoss()
@@ -51,6 +51,7 @@ if __name__ == "__main__":
         logits = model(x)
         y_pred = softmax(logits)
         loss = criterion(y_pred, y)
+
         loss.backward()
         optimizer.step()
 

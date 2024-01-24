@@ -37,8 +37,6 @@ class GradFn(ABC):
         grads: Tuple[ndarray, ...] = self.f_d(*self.tensors, y)
         for x, dx in zip(self.tensors, grads):
             if x.requires_grad:
-                if np.isnan(dx).any():
-                    breakpoint()
                 if x.shape != dx.shape:
                     dx = self._handle_broadcast(x, dx)
                 if x.grad is not None:

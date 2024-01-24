@@ -70,3 +70,7 @@ def reshape(x: Tensor, shape: Tuple[int, ...]) -> Tensor:
 
 def one_hot(x: Tensor, n_label: int) -> Tensor:
     return tensor(np.eye(n_label)[x.arr])
+
+def softmax(x: Tensor) -> Tensor:
+    e = exp(x)
+    return e / sum(e, -1, keepdims=True)
