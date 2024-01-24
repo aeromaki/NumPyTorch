@@ -22,11 +22,23 @@ class GradFn(ABC):
     def f_d(*args: 'Tensor') -> Tuple[ndarray, ...]:
         pass
 
+    @staticmethod
+    def _handle_broadcast(x: 'Tensor', dx: ndarray) -> ndarray:
+        if dx.ndim > x.ndim:
+            assert dx.shape[-x.ndim:] == x.shape
+            dx = dx.reshape(-1, *x.shape).sum(0)
+        else:
+            assert dx.ndim == x.ndim
+            for i, (n_dx, n_x) in enumerate(zip(dx.shape, x.shape)):
+                if n_x == 1:
+                    dx = dx.sum(i, keepdims=True)
+        return dx
+
     def propagate(self, y: 'Tensor') -> None:
         grads: Tuple[ndarray, ...] = self.f_d(*self.tensors, y)
         for x, dx in zip(self.tensors, grads):
             if dx.shape != x.shape:
-                dx = dx.reshape(-1, dx.shape[-1]).sum(0)
+                dx = self._handle_broadcast(x, dx)
             if x.requires_grad:
                 if x.grad is not None:
                     x.grad += dx
@@ -80,6 +92,18 @@ class TanhGradFn(GradFn):
         assert y.grad is not None
 
         dx = (1 - y.arr)**2 * y.grad
+        return (dx,)
+
+class ReshapeGradFn(GradFn):
+    def __init__(self, x: 'Tensor') -> None:
+        super().__init__(x)
+
+    @staticmethod
+    def f_d(*args: 'Tensor') -> Tuple[ndarray]:
+        x, y = args
+        assert y.grad is not None
+
+        dx = y.grad.reshape(x.shape)
         return (dx,)
 
 class AddGradFn(GradFn):

@@ -50,6 +50,10 @@ class Tensor:
     def size(self) -> int:
         return self.arr.size
 
+    @property
+    def ndim(self) -> int:
+        return self.arr.ndim
+
     def _create_new_tensor(
         self,
         o: Value,
@@ -104,7 +108,7 @@ class Tensor:
         Returns:
             None
         """
-        assert self.arr.shape == () and self.grad_fn is not None
+        assert self.arr.shape == ()
         self.grad = np.ones(())
         self.grad_fn(self)
 

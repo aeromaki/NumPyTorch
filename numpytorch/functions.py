@@ -1,7 +1,7 @@
 import numpy as np
 from numpy import ndarray
 import math
-from typing import Type
+from typing import Tuple, Type
 from .tensor import *
 from .grad_fn import *
 
@@ -50,3 +50,6 @@ def relu(x: Tensor) -> Tensor:
 
 def tanh(x: Tensor) -> Tensor:
     return _new_tensor(x, np.tanh(x.arr), TanhGradFn)
+
+def reshape(x: Tensor, shape: Tuple[int, ...]) -> Tensor:
+    return _new_tensor(x, x.arr.reshape(shape), ReshapeGradFn)
