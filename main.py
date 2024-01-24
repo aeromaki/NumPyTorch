@@ -35,7 +35,7 @@ if __name__ == "__main__":
     n_iter = 100000
     n_print = 100
     n_val = 2000
-    lr = 1e-05
+    lr = 1e-04
 
     model = MNISTClassificationModel()
     criterion = nn.CrossEntropyLoss()
@@ -49,8 +49,7 @@ if __name__ == "__main__":
         optimizer.zero_grad()
 
         logits = model(x)
-        y_pred = softmax(logits)
-        loss = criterion(y_pred, y)
+        loss = criterion(logits, y)
 
         loss.backward()
         optimizer.step()

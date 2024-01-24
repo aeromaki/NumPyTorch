@@ -7,6 +7,8 @@ class MNISTClassificationModel(nn.Module):
         self.seq = nn.Sequential(
             nn.Linear(784, 1024),
             nn.ReLU(),
+            nn.Linear(1024, 1024),
+            nn.ReLU(),
             nn.Linear(1024, 10)
         )
 
