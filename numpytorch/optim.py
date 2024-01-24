@@ -1,8 +1,8 @@
-from typing import List
+from typing import Sequence
 from .tensor import Tensor
 
 class SGDOptimizer:
-    def __init__(self, params: List[Tensor], lr: float) -> None:
+    def __init__(self, params: Sequence[Tensor], lr: float) -> None:
         """
         Initializes a stochastic gradient descent (SGD) optimizer.
 

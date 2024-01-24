@@ -30,12 +30,12 @@ class Module:
 
 
 class Linear(Module):
-    def __init__(self, d_in: int, d_out: int, bias: bool = True) -> None:
+    def __init__(self, d_in: int, d_out: int) -> None:
         self.w = Parameter.new(d_in, d_out)
-        self.b = Parameter.new(d_out) if bias else None
+        self.b = Parameter.new(d_out)
 
     def forward(self, x: Tensor) -> Tensor:
-        return x @ self.w + (self.b if self.b is not None else 0)
+        return x @ self.w + self.b
 
 class ReLU(Module):
     def forward(self, x: Tensor) -> Tensor:

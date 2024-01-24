@@ -108,7 +108,7 @@ class Tensor:
         Returns:
             None
         """
-        assert self.arr.shape == ()
+        assert self.arr.shape == () and self.grad_fn is not None
         self.grad = np.ones(())
         self.grad_fn(self)
 
