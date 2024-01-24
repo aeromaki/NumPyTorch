@@ -9,7 +9,8 @@ class Parameter(Tensor):
         super().__init__(arr=x, requires_grad=True)
 
     def _init_weight(*args: int) -> Tensor:
-        return tensor(np.random.normal(scale=(2 / args[0])**0.5, size=args))
+        u = (6 / args[0])**0.5
+        return tensor(np.random.uniform(-u, u, size=args))
 
     def new(*args: int) -> Parameter:
         return Parameter(Parameter._init_weight(*args))
@@ -33,9 +34,9 @@ class Module:
 
 
 class Linear(Module):
-    def __init__(self, d_in: int, d_out: int) -> None:
+    def __init__(self, d_in: int, d_out: int, bias: bool = True) -> None:
         self.w = Parameter.new(d_in, d_out)
-        self.b = Parameter.new(d_out)
+        self.b = Parameter(zeros(d_out)) if bias else 0
 
     def forward(self, x: Tensor) -> Tensor:
         return x @ self.w + self.b
@@ -58,9 +59,14 @@ class Sigmoid(Module):
     def forward(self, x: Tensor) -> Tensor:
         return sigmoid(x)
 
+class Tanh(Module):
+    def forward(self, x: Tensor) -> Tensor:
+        return tanh(x)
+
 class CrossEntropyLoss(Module):
-    def forward(self, p: Tensor, q: Tensor) -> Tensor:
-        if p.shape != q.shape:
-            q = one_hot(q, p.shape[-1])
-        p_softmax = softmax(p)
-        return mean(cross_entropy(p_softmax, q))
+    def forward(self, logits: Tensor, q: Tensor) -> Tensor:
+        if logits.shape != q.shape:
+            q = one_hot(q, logits.shape[-1])
+        log_p = logits - log(sum(exp(logits), -1, keepdims=True))
+        ce = -sum(q * log_p, -1)
+        return mean(ce)

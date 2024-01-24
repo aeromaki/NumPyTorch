@@ -5,11 +5,11 @@ from numpytorch.functions import *
 class MNISTClassificationModel(nn.Module):
     def __init__(self) -> None:
         self.seq = nn.Sequential(
-            nn.Linear(784, 1024),
+            nn.Linear(784, 256),
             nn.ReLU(),
-            nn.Linear(1024, 1024),
+            nn.Linear(256, 32),
             nn.ReLU(),
-            nn.Linear(1024, 10)
+            nn.Linear(32, 10, bias=False)
         )
 
     def forward(self, x: Tensor) -> Tensor:

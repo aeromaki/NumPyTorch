@@ -10,6 +10,10 @@ if TYPE_CHECKING:
     from .tensor import Tensor
 
 
+def clip_eps(x: ndarray, eps: float = 1e-06) -> ndarray:
+    return np.sign(x) * np.clip(np.abs(x), a_min=eps, a_max=None)
+
+
 class GradFn(ABC):
     def __init__(self, *args: 'Tensor') -> None:
         self.tensors: Tuple['Tensor', ...] = args
@@ -39,7 +43,7 @@ class GradFn(ABC):
             if x.requires_grad:
                 if x.shape != dx.shape:
                     dx = self._handle_broadcast(x, dx)
-                if x.grad is not None:
+                if x.grad is not None and x.grad_fn is None:
                     x.grad += dx
                 else:
                     x.grad = dx
@@ -90,7 +94,7 @@ class LogGradFn(GradFn):
         x, y = args
         assert y.grad is not None
 
-        dx = y.grad / x.arr
+        dx = y.grad / clip_eps(x.arr)
         return (dx,)
 
 class SigmoidGradFn(GradFn):
@@ -155,19 +159,6 @@ class SubGradFn(GradFn):
         dx1 = -np.ones_like(x1.arr) * y.grad
         return dx0, dx1
 
-class RSubGradFn(GradFn):
-    def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
-        super().__init__(x0, x1)
-
-    @staticmethod
-    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
-        x0, x1, y = args
-        assert y.grad is not None
-
-        dx0 = -np.ones_like(x0.arr) * y.grad
-        dx1 = np.ones_like(x1.arr) * y.grad
-        return dx0, dx1
-
 class MulGradFn(GradFn):
     def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
         super().__init__(x0, x1)
@@ -190,21 +181,8 @@ class DivGradFn(GradFn):
         x0, x1, y = args
         assert y.grad is not None
 
-        dx0 = y.grad / x1.arr
-        dx1 = -x0.arr / x1.arr**2 * y.grad
-        return dx0, dx1
-
-class RDivGradFn(GradFn):
-    def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
-        super().__init__(x0, x1)
-
-    @staticmethod
-    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
-        x0, x1, y = args
-        assert y.grad is not None
-
-        dx0 = -x1.arr / x0.arr**2 * y.grad
-        dx1 = y.grad / x0.arr
+        dx0 = y.grad / clip_eps(x1.arr)
+        dx1 = -x0.arr / clip_eps(x1.arr**2) * y.grad
         return dx0, dx1
 
 class PowGradFn(GradFn):
@@ -217,24 +195,9 @@ class PowGradFn(GradFn):
         assert y.grad is not None
         assert (x0.arr > 0).all()
 
-        b = x0.arr**x1.arr * y.grad
-        dx0 = x1.arr / x0.arr * b
-        dx1 = np.log(x0.arr) * b
-        return dx0, dx1
-
-class RPowGradFn(GradFn):
-    def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
-        super().__init__(x0, x1)
-
-    @staticmethod
-    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
-        x0, x1, y = args
-        assert y.grad is not None
-        assert (x1.arr > 0).all()
-
-        b = x1.arr**x0.arr * y.grad
-        dx0 = np.log(x1.arr) * b
-        dx1 = x0.arr / x1.arr * b
+        b = x0.arr**(x1.arr-1) * y.grad
+        dx0 = x1.arr * b
+        dx1 = np.log(x0.arr) * x0.arr * b
         return dx0, dx1
 
 class MatmulGradFn(GradFn):
@@ -250,15 +213,18 @@ class MatmulGradFn(GradFn):
         dx1 = np.moveaxis(x0.arr, -1, -2) @ y.grad
         return dx0, dx1
 
-class RMatmulGradFn(GradFn):
+class RSubGradFn(SubGradFn):
     def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
-        super().__init__(x0, x1)
+        super().__init__(x1, x0)
 
-    @staticmethod
-    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
-        x0, x1, y = args
-        assert y.grad is not None
+class RDivGradFn(DivGradFn):
+    def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
+        super().__init__(x1, x0)
 
-        dx0 = np.moveaxis(x1.arr, -1, -2) @ y.grad
-        dx1 = y.grad @ np.moveaxis(x0.arr, -1, -2)
-        return dx0, dx1
+class RPowGradFn(PowGradFn):
+    def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
+        super().__init__(x1, x0)
+
+class RMatmulGradFn(MatmulGradFn):
+    def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
+        super().__init__(x1, x0)

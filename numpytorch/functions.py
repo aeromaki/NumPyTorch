@@ -50,27 +50,20 @@ def sum(
     return _new_tensor(x, np.sum(x.arr, axis, keepdims=keepdims), SumGradFn,
                         axis=axis, keepdims=keepdims)
 
-def mean(x: Tensor, axis: Optional[int] = None) -> Tensor:
+def mean(x: Tensor, axis: Optional[int] = None, keepdims: bool = False) -> Tensor:
     if axis is None:
         return sum(x) / x.size
     else:
-        return sum(x, axis) / x.shape[axis]
+        return sum(x, axis, keepdims) / x.shape[axis]
 
 def relu(x: Tensor) -> Tensor:
-    return _new_tensor(x, np.clip(x.arr, a_min=0, a_max=None), ReLUGradFn)
+    return _new_tensor(x, np.maximum(0, x.arr), ReLUGradFn)
 
 def tanh(x: Tensor) -> Tensor:
     return _new_tensor(x, np.tanh(x.arr), TanhGradFn)
-
-def cross_entropy(p: Tensor, q: Tensor) -> Tensor:
-    return -sum(q * log(p), -1)
 
 def reshape(x: Tensor, shape: Tuple[int, ...]) -> Tensor:
     return _new_tensor(x, x.arr.reshape(shape), ReshapeGradFn)
 
 def one_hot(x: Tensor, n_label: int) -> Tensor:
     return tensor(np.eye(n_label)[x.arr])
-
-def softmax(x: Tensor) -> Tensor:
-    e = exp(x)
-    return e / sum(e, -1, keepdims=True)

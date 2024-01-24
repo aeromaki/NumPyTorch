@@ -5,9 +5,8 @@ from numpy import ndarray
 from tqdm import tqdm
 from sklearn.metrics import f1_score
 
-from numpytorch import tensor, nn, optim, mean
-
-
+import numpytorch as npt
+from numpytorch import tensor, nn, optim
 from assignment import MNISTClassificationModel
 
 
@@ -28,11 +27,21 @@ def get_mnist() -> Tuple[ndarray, ndarray, ndarray, ndarray]:
     return (x_train, y_train, x_val, y_val)
 
 
-if __name__ == "__main__":
+def val(model: nn.Module, x_val: ndarray, y_val: ndarray) -> Tuple[float, float]:
+    preds = []
+    for x in x_val:
+        x = tensor(x)
+        preds.append(model(x).arr.argmax(-1)[..., 0].item())
+    macro = f1_score(y_val, preds, average="macro")
+    micro = f1_score(y_val, preds, average="micro")
+    return macro, micro
+
+
+if __name__ == '__main__':
     x_train, y_train, x_val, y_val = get_mnist()
 
     n_batch = 32
-    n_iter = 100000
+    n_iter = 50000
     n_print = 100
     n_val = 2000
     lr = 1e-04
@@ -50,6 +59,8 @@ if __name__ == "__main__":
 
         logits = model(x)
         loss = criterion(logits, y)
+        if np.isnan(loss.item()):
+            break
 
         loss.backward()
         optimizer.step()
@@ -60,10 +71,8 @@ if __name__ == "__main__":
             buf = 0
 
         if i % n_val == 0:
-            preds = []
-            for x in x_val:
-                x = tensor(x)
-                preds.append(model(x).arr.argmax(-1)[..., 0].item())
-            macro = f1_score(y_val, preds, average="macro")
-            micro = f1_score(y_val, preds, average="micro")
-            print(f"macro: {macro} micro: {micro}")
+            macro, micro = val(model, x_val, y_val)
+            print(f"macro: {macro:.9f} micro: {micro:.9f}")
+
+    macro, micro = val(model, x_val, y_val)
+    print(f"\nfinal score\nmacro: {macro:.9f} micro: {micro:.9f}")
