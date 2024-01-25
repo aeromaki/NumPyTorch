@@ -7,9 +7,9 @@ class MNISTClassificationModel(nn.Module):
         self.seq = nn.Sequential(
             nn.Linear(784, 256),
             nn.ReLU(),
-            nn.Linear(256, 32),
+            nn.Linear(256, 256),
             nn.ReLU(),
-            nn.Linear(32, 10, bias=False)
+            nn.Linear(256, 10, bias=False)
         )
 
     def forward(self, x: Tensor) -> Tensor:

@@ -43,7 +43,7 @@ class GradFn(ABC):
             if x.requires_grad:
                 if x.shape != dx.shape:
                     dx = self._handle_broadcast(x, dx)
-                if x.grad is not None and x.grad_fn is None:
+                if x.grad is not None and x.is_leaf:
                     x.grad += dx
                 else:
                     x.grad = dx
