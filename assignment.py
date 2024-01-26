@@ -31,7 +31,7 @@ class MNISTClassificationModel(nn.Module):
 
 # Convolution layer
 class Conv2d(nn.Module):
-    def __init__(self,) -> None:
+    def __init__(self) -> None:
 
         pass
 
