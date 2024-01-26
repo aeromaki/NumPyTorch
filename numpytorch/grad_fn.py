@@ -35,7 +35,7 @@ class GradFn(ABC):
         in functions.py, making them traceable on the computation graph. When a tensor-to-tensor operation occurs,
         if any tensor has a double requires_grad=True, a GradFn instance corresponding to the operation is created
         and put into the new tensor's grad_fn (resulting from the operation). Just as parent tensors are used in
-        the computation, when creating a GradFn for a child tensor, you can include its parent tensors in __init__
+        the computation, when creating GradFn for a child tensor, you can include its parent tensors in __init__
         to save them.
         """
         self.tensors: Tuple['Tensor', ...] = args
@@ -80,7 +80,7 @@ class GradFn(ABC):
         Backward propagation process. The process is as follows
         1. compute the gradient of the parent tensors with self.f_d.
         2. update grad for parent tensors with requires_grad=True (see video for implementation details)
-        3. call grad_fn for those parent tensors that have a grad_fn.
+        3. call grad_fn for those parent tensors that have grad_fn.
 
         Args:
             y (Tensor): A tensor that has this GradFn as its grad_fn.
