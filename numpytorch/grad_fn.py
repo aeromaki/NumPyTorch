@@ -52,7 +52,7 @@ class GradFn(ABC):
         subclasses (which actually have their corresponding forward operation).
 
         Args:
-            *args (Tensor): Your own parent tensors and yourself (Tensor).
+            *args (Tensor): Parent tensors and itself (Tensor).
         """
         pass
 

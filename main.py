@@ -44,7 +44,7 @@ if __name__ == '__main__':
     n_iter = 50000
     n_print = 100
     n_val = 2000
-    lr = 1e-05
+    lr = 1e-03
 
     model = MNISTClassificationModel()
     criterion = nn.CrossEntropyLoss()
