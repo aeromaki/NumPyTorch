@@ -29,9 +29,9 @@ def get_mnist() -> Tuple[ndarray, ndarray, ndarray, ndarray]:
 
 def val(model: nn.Module, x_val: ndarray, y_val: ndarray) -> Tuple[float, float]:
     preds = []
-    for x in x_val:
-        x = tensor(x)
-        preds.append(model(x).arr.argmax(-1)[..., 0].item())
+    for i in range(0, len(x_val), 32):
+        x = tensor(x_val[i:i+32])
+        preds += model(x).arr.argmax(-1).tolist()
     macro = f1_score(y_val, preds, average="macro")
     micro = f1_score(y_val, preds, average="micro")
     return macro, micro
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     n_iter = 50000
     n_print = 100
     n_val = 2000
-    lr = 1e-04
+    lr = 1e-05
 
     model = MNISTClassificationModel()
     criterion = nn.CrossEntropyLoss()
