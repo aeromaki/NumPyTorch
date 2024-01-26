@@ -111,5 +111,5 @@ class MNISTClassificationModel(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         # Input shape: (batch_size, 1, 28, 28)
-        # Return shape: (batch_size, 10
+        # Return shape: (batch_size, 10)
         pass
