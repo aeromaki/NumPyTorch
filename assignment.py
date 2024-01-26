@@ -4,7 +4,6 @@ from typing import Tuple, Union
 
 from numpytorch import Tensor, nn
 from numpytorch.grad_fn import GradFn
-from numpytorch.functions import _new_tensor
 from numpytorch.functions import *
 
 
