@@ -60,6 +60,10 @@ class GradFn(ABC):
     def _handle_broadcast(x: 'Tensor', dx: ndarray) -> ndarray:
         """
         Since ndarray operations often involve broadcasting, it is sometimes necessary to reverse shape the gradient.
+
+        Args:
+            x (Tensor): Parent tensor
+            dx (ndarray): The gradient of x computed from f_d. We need to fit the shape of this dx to the shape of x.
         """
         if dx.ndim > x.ndim:
             assert dx.shape[-x.ndim:] == x.shape or x.shape == ()
@@ -77,6 +81,10 @@ class GradFn(ABC):
         1. compute the gradient of the parent tensors with self.f_d.
         2. update grad for parent tensors with requires_grad=True (see video for implementation details)
         3. call grad_fn for those parent tensors that have a grad_fn.
+
+        Args:
+            y (Tensor): A tensor that has this GradFn as its grad_fn.
+                        On the computation graph, it is the child tensor that result from the operation.
         """
         # compute the gradient of the parent tensors with self.f_d
         grads: Tuple[ndarray, ...] = self.f_d(*self.tensors, y)
