@@ -28,14 +28,6 @@ def exp(x: Tensor) -> Tensor:
 def sigmoid_naive(x: Tensor) -> Tensor:
     return 1 / (1 + exp(-x))
 
-def _new_tensor(x: Tensor, arr: ndarray, grad_fn: Type[GradFn], **kwargs: Any) -> Tensor:
-    return Tensor(
-        arr,
-        requires_grad=x.requires_grad,
-        is_leaf=not x.requires_grad,
-        grad_fn=grad_fn(x, **kwargs) if x.requires_grad else None
-    )
-
 def log(x: Tensor) -> Tensor:
     return _new_tensor(x, np.log(x.arr), LogGradFn)
 

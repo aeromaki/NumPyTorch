@@ -280,3 +280,33 @@ class RPowGradFn(PowGradFn):
 class RMatmulGradFn(MatmulGradFn):
     def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
         super().__init__(x1, x0)
+
+class GetitemGradFn(GradFn):
+    def __init__(self, x: 'Tensor', key) -> None:
+        super().__init__(x)
+        self.key = key
+
+    def f_d(self, *args: 'Tensor') -> Tuple[ndarray]:
+        x, y = args
+        assert y.grad is not None
+
+        dx = np.zeros_like(x.arr)
+        print(dx.shape, self.key, dx[self.key].shape, type(self.key), y.grad.shape)
+        dx[self.key] = y.grad
+        return (dx,)
+
+class SetitemGradFn(GradFn):
+    def __init__(self, x: 'Tensor', key, value, grad_fn: GradFn) -> None:
+        super().__init__(x)
+        self.key = key
+        self.value = value
+        self.inner_grad_fn = grad_fn
+
+    def f_d(self, *args: 'Tensor') -> Tuple[ndarray]:
+        x, y = args
+        assert y.grad is not None
+
+        dx = self.inner_grad_fn.f_d(*args)[0]
+        dx[key] = 0
+
+        return (dx,)

@@ -177,37 +177,47 @@ class Tensor:
     def __neg__(self) -> Tensor:
         return self.__rsub__(0)
 
-    def _assert_grad(self) -> None:
-        assert not self.requires_grad
+    def _assert_not_leaf(self) -> None:
+        assert not self.is_leaf
 
     def __iadd__(self, o: Value) -> Tensor:
-        self._assert_grad()
+        self._assert_not_leaf()
         self.arr = self.arr + ndfy(o)
         return self
 
     def __isub__(self, o: Value) -> Tensor:
-        self._assert_grad()
+        self._assert_not_leaf()
         self.arr = self.arr - ndfy(o)
         return self
 
     def __imul__(self, o: Value) -> Tensor:
-        self._assert_grad()
+        self._assert_not_leaf()
         self.arr = self.arr * ndfy(o)
         return self
 
     def __itruediv__(self, o: Value) -> Tensor:
-        self._assert_grad()
+        self._assert_not_leaf()
         self.arr = self.arr / ndfy(o)
         return self
 
     def __ipow__(self, o: Value) -> Tensor:
-        self._assert_grad()
+        self._assert_not_leaf()
         self.arr = self.arr ** ndfy(o)
         return self
 
     def __imatmul__(self, o: Value) -> Tensor:
-        self._assert_grad()
+        self._assert_not_leaf()
         self.arr = self.arr @ ndfy(o)
+        return self
+
+    def __getitem__(self, key) -> Tensor:
+        return _new_tensor(self, self.arr[key], GetitemGradFn, key=key)
+
+    def __setitem__(self, key, value) -> None:
+        self._assert_not_leaf()
+        self.arr[key] = value
+        if self.grad_fn is not None:
+            self.grad_fn = SetitemGradFn(self, key, self.grad_fn)
         return self
 
     def __str__(self) -> str:
@@ -218,3 +228,12 @@ class Tensor:
 
     def __repr__(self) -> str:
         return self.__str__()
+
+
+def _new_tensor(x: Tensor, arr: ndarray, grad_fn: Type[GradFn], **kwargs: Any) -> Tensor:
+    return Tensor(
+        arr,
+        requires_grad=x.requires_grad,
+        is_leaf=not x.requires_grad,
+        grad_fn=grad_fn(x, **kwargs) if x.requires_grad else None
+    )
