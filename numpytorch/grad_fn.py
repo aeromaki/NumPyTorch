@@ -296,10 +296,9 @@ class GetitemGradFn(GradFn):
         return (dx,)
 
 class SetitemGradFn(GradFn):
-    def __init__(self, x: 'Tensor', key, value, grad_fn: GradFn) -> None:
+    def __init__(self, x: 'Tensor', key, grad_fn: GradFn) -> None:
         super().__init__(x)
         self.key = key
-        self.value = value
         self.inner_grad_fn = grad_fn
 
     def f_d(self, *args: 'Tensor') -> Tuple[ndarray]:
@@ -310,3 +309,20 @@ class SetitemGradFn(GradFn):
         dx[key] = 0
 
         return (dx,)
+
+class SetitemTensorGradFn(GradFn):
+    def __init__(self, x0: 'Tensor', x1:  'Tensor', key, grad_fn: GradFn) -> None:
+        super().__init__(x0, x1)
+        self.key = key
+        self.inner_grad_fn = grad_fn
+
+    def f_d(self, *args: 'Tensor') -> Tuple[ndarray, ndarray]:
+        x0, x1, y = args
+        assert y.grad is not None
+
+        dx = self.inner_grad_fn.f_d(*args)[0]
+        dx0 = dx
+        dx0[key] = 0
+        dx1 = dx[key].reshape(x1.shape)
+
+        return (dx0, dx1)

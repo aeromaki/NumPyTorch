@@ -217,7 +217,10 @@ class Tensor:
         self._assert_not_leaf()
         self.arr[key] = value
         if self.grad_fn is not None:
-            self.grad_fn = SetitemGradFn(self, key, self.grad_fn)
+            if isinstance(value, Tensor) and value.requires_grad:
+                self.grad_fn = SetitemTensorGradFn(self, value, key, self.grad_fn)
+            else:
+                self.grad_fn = SetitemGradFn(self, key, self.grad_fn)
         return self
 
     def __str__(self) -> str:
