@@ -93,3 +93,45 @@ class CrossEntropyLoss(Module):
         log_p = logits - log(sum(exp(logits), -1, keepdims=True))
         ce = -sum(q * log_p, -1)
         return mean(ce)
+
+class MultiHeadAttention(Module):
+    def __init__(self):
+        pass
+
+    def forward(self):
+        pass
+
+class TransformerEncoderLayer(Module):
+    def __init__(self):
+        pass
+
+    def forward(self):
+        pass
+
+class TransformerDecoderLayer(Module):
+    def __init__(self):
+        pass
+
+    def forward(self):
+        pass
+
+class TransformerEncoder(Module):
+    def __init__(self):
+        pass
+
+    def forward(self):
+        pass
+
+class TransformerDecoder(Module):
+    def __init__(self):
+        pass
+
+    def forward(self):
+        pass
+
+class Transformer(Module):
+    def __init__(self):
+        pass
+
+    def forward(self):
+        pass
