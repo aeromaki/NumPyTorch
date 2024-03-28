@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Any, Callable, List
 from .tensor import Tensor, Value
 from .functions import *
+from . import inf
 
 
 class Parameter(Tensor):
@@ -94,12 +95,89 @@ class CrossEntropyLoss(Module):
         ce = -sum(q * log_p, -1)
         return mean(ce)
 
-class MultiHeadAttention(Module):
-    def __init__(self):
-        pass
 
-    def forward(self):
-        pass
+class _AttentionProjector(Module):
+    def __init__(
+        self,
+        d_model: int,
+        d_proj: int,
+        n_head: int
+    ) -> None:
+        self.proj = Linear(d_model, d_proj*n_head)
+        self.d_proj = d_proj
+        self.n_head = n_head
+
+    def forward(self, x: Tensor) -> Tensor:
+        p = self.proj(x)
+        p = reshape(p, (*p.shape[:-2], self.n_head, p.shape[-2], self.d_proj))
+        return p
+
+class MultiHeadAttention(Module):
+    def __init__(
+        self,
+        d_model: int,
+        d_k: int,
+        d_v: int,
+        n_head: int
+    ) -> None:
+        self.d_k = d_k
+        self.d_v = d_v
+        self.n_head = n_head
+        self.Wq = _AttentionProjector(d_model, d_k, n_head)
+        self.Wk = _AttentionProjector(d_model, d_k, n_head)
+        self.Wv = _AttentionProjector(d_model, d_v, n_head)
+        self.Wo = Linear(d_v*n_head, d_model)
+
+    def forward(
+        self,
+        q: Tensor,
+        k: Tensor,
+        v: Tensor,
+        mask_q: Optional[Tensor] = None,
+        mask_k: Optional[Tensor] = None,
+        mask_tgt: Optional[Tensor] = None
+    ) -> Tensor:
+        q_mh = self.Wq(q)
+        k_mh = self.Wk(k)
+        v_mh = self.Wv(v)
+        mask_q_mh = self._generate_mask(mask_q)
+        mask_k_mh = self._generate_mask(mask_k)
+
+        inn = q_mh @ transpose(k_mh)
+
+        if mask_q is not None:
+            inn = inn * unsqueeze(mask_q_mh, mask_q_mh.ndim+1)
+
+        if mask_k is not None:
+            inn = inn * unsqueeze(mask_k_mh, -1)
+
+        if mask_tgt is not None:
+            mask_tgt_ = ones(*mask_tgt.shape)
+            mask_tgt_[mask_tgt == 0] = -inf
+            inn = inn * mask_tgt_
+
+        att = softmax(inn / self.d_k ** 0.5) @ v_mh
+
+        res = self._reshape_v(att)
+        res = self.Wo(res)
+        return res
+
+    def _generate_mask(self, mask: Optional[Tensor] = None) -> Tensor:
+        if mask is not None:
+            mask_mh = ones(*mask.shape)
+            mask_mh[mask == 0] = -inf
+
+            batch_ones = [1] * len(mask.shape[:-1])
+            mask_mh = repeat(unsqueeze(mask_mh, 1), (*batch_ones, self.n_head, 1))
+        else:
+            mask_mh = None
+        return mask_mh
+
+    @staticmethod
+    def _reshape_v(output: Tensor) -> Tensor:
+        res = transpose(output, (-3, -2))
+        res = reshape(res, (*res.shape[:-2], -1))
+        return res
 
 class TransformerEncoderLayer(Module):
     def __init__(self):

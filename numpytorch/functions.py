@@ -2,6 +2,7 @@ import numpy as np
 from numpy import ndarray
 import math
 from typing import Any, Optional, Tuple, Type, Union
+from .tensor import _new_tensor
 from .tensor import *
 from .grad_fn import *
 
@@ -14,10 +15,10 @@ def tensor(
     return Tensor(v, requires_grad=requires_grad)
 
 def zeros(*args, requires_grad: bool = False, **kwargs) -> Tensor:
-    return Tensor(np.zeros(*args, **kwargs), requires_grad)
+    return Tensor(np.zeros(args, **kwargs), requires_grad)
 
 def ones(*args, requires_grad: bool = False, **kwargs) -> Tensor:
-    return Tensor(np.ones(*args, **kwargs), requires_grad)
+    return Tensor(np.ones(args, **kwargs), requires_grad)
 
 def rand(*args, requires_grad: bool = False, **kwargs) -> Tensor:
     return Tensor(np.random.rand(*args, **kwargs), requires_grad)
@@ -59,3 +60,24 @@ def reshape(x: Tensor, shape: Tuple[int, ...]) -> Tensor:
 
 def one_hot(x: Tensor, n_label: int) -> Tensor:
     return tensor(np.eye(n_label)[x.arr])
+
+def repeat(x: Tensor, rep: Tuple[int, ...]) -> Tensor:
+    return _new_tensor(x, np.tile(x.arr, rep), RepeatGradFn)
+
+def unsqueeze(x: Tensor, axis: int) -> Tensor:
+    return reshape(x, (*x.shape[:axis], 1, *x.shape[axis:]))
+
+def squeeze(x: Tensor, axis: int) -> Tensor:
+    if x.shape[axis] == 1:
+        return reshape(x, (*x.shape[:axis], *x.shape[axis+1:]))
+    else:
+        return x
+
+def transpose(x: Tensor, axes: Optional[Tuple[int, int]] = None) -> Tensor:
+    if axes is None:
+        axes = (-1, -2)
+    return _new_tensor(x, np.swapaxes(x.arr, *axes), TransposeGradFn, axes=axes)
+
+def softmax(x: Tensor, axis: int = -1) -> Tensor:
+    e = exp(x)
+    return e / sum(e, axis, keepdims=True)
