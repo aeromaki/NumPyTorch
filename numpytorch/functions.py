@@ -49,6 +49,9 @@ def mean(x: Tensor, axis: Optional[int] = None, keepdims: bool = False) -> Tenso
     else:
         return sum(x, axis, keepdims) / x.shape[axis]
 
+def var(x: Tensor, axis: int) -> Tensor:
+    return mean(x**2, axis, keepdims=True) - mean(x, axis, keepdims=True)**2
+
 def relu(x: Tensor) -> Tensor:
     return _new_tensor(x, np.maximum(0, x.arr), ReLUGradFn)
 

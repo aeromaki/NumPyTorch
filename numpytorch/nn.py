@@ -18,8 +18,14 @@ class Parameter(Tensor):
         u = (6 / args[0])**0.5
         return tensor(np.random.uniform(-u, u, size=args))
 
+    @staticmethod
     def new(*args: int) -> Parameter:
         return Parameter(Parameter._init_weight(*args))
+
+    @staticmethod
+    def new_scalar() -> Parameter:
+        return Parameter(rand())
+
 
 class Module:
     """
@@ -76,24 +82,40 @@ class Sequential(Module):
         return x
 
 class ReLU(Module):
-    def forward(self, x: Tensor) -> Tensor:
+    @staticmethod
+    def forward(x: Tensor) -> Tensor:
         return relu(x)
 
 class Sigmoid(Module):
-    def forward(self, x: Tensor) -> Tensor:
+    @staticmethod
+    def forward(x: Tensor) -> Tensor:
         return sigmoid(x)
 
 class Tanh(Module):
-    def forward(self, x: Tensor) -> Tensor:
+    @staticmethod
+    def forward(x: Tensor) -> Tensor:
         return tanh(x)
 
 class CrossEntropyLoss(Module):
-    def forward(self, logits: Tensor, q: Tensor) -> Tensor:
+    @staticmethod
+    def forward(logits: Tensor, q: Tensor) -> Tensor:
         if logits.shape != q.shape:
             q = one_hot(q, logits.shape[-1])
         log_p = logits - log(sum(exp(logits), -1, keepdims=True))
         ce = -sum(q * log_p, -1)
         return mean(ce)
+
+class LayerNorm(Module):
+    def __init__(
+        self,
+        eps: float = 1e-05
+    ) -> None:
+        self.eps = eps
+        self.gamma = Parameter.new_scalar()
+        self.beta = Parameter.new_scalar()
+
+    def forward(x: Tensor) -> Tensor:
+        return (x - mean(x, -1, keepdims=True)) / (var(x) + self.eps) ** 0.5 * self.gamma + self.beta
 
 
 class _AttentionProjector(Module):
@@ -175,36 +197,164 @@ class MultiHeadAttention(Module):
         return res
 
 class TransformerEncoderLayer(Module):
-    def __init__(self):
-        pass
+    def __init__(
+        self,
+        d_model: int,
+        d_k: int,
+        n_head: int
+    ) -> None:
+        self.att_self = MultiHeadAttention(d_model, d_k, d_k, n_head)
+        self.ff = Sequential(
+            Linear(d_model, d_model*4),
+            ReLU(),
+            Linear(d_model*4, d_model)
+        )
+        self.layernorm0 = LayerNorm()
+        self.layernorm1 = LayerNorm()
 
-    def forward(self):
-        pass
+    def forward(
+        self,
+        q: Tensor,
+        mask_q: Optional[Tensor] = None
+    ):
+        h_self = self.att_self(q, q, q, mask_q, mask_q)
+        res_self = self.layernorm0(q + h_self)
+
+        h_ff = self.ff(res_cross)
+        res = self.layernorm1(res_cross + h_ff)
+
+        return res
 
 class TransformerDecoderLayer(Module):
-    def __init__(self):
-        pass
+    def __init__(
+        self,
+        d_model: int,
+        d_k: int,
+        d_v: int,
+        n_head: int
+    ):
+        self.att_self = MultiHeadAttention(d_model, d_k, d_v, n_head)
+        self.att_cross = MultiHeadAttention(d_model, d_k, d_v, n_head)
+        self.ff = Sequential(
+            Linear(d_model, d_model*4),
+            ReLU(),
+            Linear(d_model*4, d_model)
+        )
+        self.layernorm0 = LayerNorm()
+        self.layernorm1 = LayerNorm()
+        self.layernorm2 = LayerNorm()
 
-    def forward(self):
-        pass
+    def forward(
+        self,
+        q: Tensor,
+        k: Tensor,
+        mask_q: Optional[Tensor] = None,
+        mask_k: Optional[Tensor] = None,
+        mask_tgt: Optional[Tensor] = None
+    ):
+        h_self = self.att_self(q, q, q, mask_q, mask_q, mask_tgt)
+        res_self = self.layernorm0(q + h_self)
+
+        h_cross = self.att_cross(res_self, k, k, mask_q, mask_k)
+        res_cross = self.layernorm1(res_self + h_cross)
+
+        h_ff = self.ff(res_cross)
+        res = self.layernorm2(res_cross + h_ff)
+
+        return res
 
 class TransformerEncoder(Module):
-    def __init__(self):
-        pass
+    def __init__(
+        self,
+        d_model: int,
+        d_k: int,
+        n_head: int,
+        n_layer: int
+    ) -> None:
+        self.layers = ModuleList([
+            TransformerEncoderLayer(d_model, d_k, n_head) for _ in range(n_layer)
+        ])
 
-    def forward(self):
-        pass
+    def forward(
+        self,
+        q: Tensor,
+        mask_q: Optional[Tensor] = None,
+    ) -> Tensor:
+        h = q
+        for layer in self.layers:
+            h = layer(h, h, mask_q)
+        return h
 
 class TransformerDecoder(Module):
-    def __init__(self):
-        pass
+    def __init__(
+        self,
+        d_model: int,
+        d_k: int,
+        d_v: int,
+        n_head: int,
+        n_layer: int
+    ) -> None:
+        self.layers = ModuleList([
+            TransformerDecoderLayer(d_model, d_k, d_v, n_head) for _ in range(n_layer)
+        ])
 
-    def forward(self):
-        pass
+    def forward(
+        self,
+        q: Tensor,
+        k: Tensor,
+        mask_q: Optional[Tensor] = None,
+        mask_k: Optional[Tensor] = None,
+        mask_tgt: Optional[Tensor] = None
+    ) -> Tensor:
+        h = q
+        for layer in self.layers:
+            h = layer(h, k, mask_q, mask_k, mask_tgt)
+        return h
+
+class Embedding(Module):
+    def __init__(
+        self,
+        n_vocab: int,
+        d_model: int
+    ) -> None:
+        self.embedding = Parameter.new(n_vocab, d_model)
+
+    def forward(seq: Tensor) -> Tensor:
+        return self.embedding(seq)
 
 class Transformer(Module):
-    def __init__(self):
-        pass
+    def __init__(
+        self,
+        n_vocab: int,
+        d_model: int,
+        d_k: int,
+        d_v: int,
+        n_head: int,
+        n_layer: int,
+        max_len: int
+    ):
+        self.embedding = Embedding(n_vocab, d_model)
+        self.max_len = max_len
+        self.positional_embedding = Parameter.new(max_len, d_model)
+        self.encoder = TransformerEncoder(d_model, d_k, n_head, n_layer)
+        self.decoder = TransformerDecoder(d_model, d_k, d_v, n_head, n_layer)
 
-    def forward(self):
-        pass
+    def forward(
+        self,
+        q: Tensor,
+        k: Tensor,
+        mask_q: Optional[Tensor] = None,
+        mask_k: Optional[Tensor] = None,
+        mask_tgt: Optional[Tensor] = None
+    ) -> Tensor:
+        q = self.embed(q)
+        k = self.embed(k)
+        e_last_hidden_state = self.encoder(q, mask_q)
+        d_last_hidden_state = self.decoder(e_last_hidden_state, k, mask_q, mask_k, mask_tgt)
+        return d_last_hidden_state
+
+    def embed(self, x: Tensor) -> Tensor:
+        assert x.shape[-1] <= self.max_len
+        e = self.embedding(x)
+        e = e + self.positional_embedding[:x.shape[-1], :]
+        return e
