@@ -178,7 +178,8 @@ class Tensor:
         return self.__rsub__(0)
 
     def _assert_not_leaf(self) -> None:
-        assert not self.is_leaf or not self.requires_grad
+        assert not self.requires_grad
+        # assert not self.is_leaf or not self.requires_grad
 
     def __iadd__(self, o: Value) -> Tensor:
         self._assert_not_leaf()
@@ -211,12 +212,12 @@ class Tensor:
         return self
 
     def __getitem__(self, key) -> Tensor:
-        return _new_tensor(self, self.arr[key.arr if isinstance(key, Tensor) else key], GetitemGradFn, key=key)
+        key = key.arr if isinstance(key, Tensor) else key
+        return _new_tensor(self, self.arr[key], GetitemGradFn, key=key)
 
     def __setitem__(self, key, value) -> None:
         self._assert_not_leaf()
         self.arr[key] = value
-        return self
 
     def __str__(self) -> str:
         arr = str(self.arr)

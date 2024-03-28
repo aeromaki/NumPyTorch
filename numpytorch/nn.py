@@ -363,3 +363,9 @@ class Transformer(Module):
         d = self.embedding(x)
         d = d + self.positional_embedding[:x.shape[-1], :]
         return d
+
+    @staticmethod
+    def create_tgt_mask(tgt_len: int) -> Tensor:
+        o = np.ones(len_seq, len_seq)
+        mask = tensor(np.triu(o))
+        return mask

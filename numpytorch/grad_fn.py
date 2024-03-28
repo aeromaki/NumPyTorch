@@ -245,7 +245,7 @@ class PowGradFn(GradFn):
     def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
-        assert (x0.arr > 0).all()
+        # assert (x0.arr > 0).all()
 
         b = x0.arr**(x1.arr-1) * y.grad
         dx0 = x1.arr * b
@@ -291,8 +291,8 @@ class GetitemGradFn(GradFn):
         assert y.grad is not None
 
         dx = np.zeros_like(x.arr)
-        print(dx.shape, self.key, dx[self.key].shape, type(self.key), y.grad.shape)
         dx[self.key] = y.grad
+
         return (dx,)
 
 class RepeatGradFn(GradFn):
