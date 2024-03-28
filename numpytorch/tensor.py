@@ -211,7 +211,7 @@ class Tensor:
         return self
 
     def __getitem__(self, key) -> Tensor:
-        return _new_tensor(self, self.arr[key], GetitemGradFn, key=key)
+        return _new_tensor(self, self.arr[key.arr if isinstance(key, Tensor) else key], GetitemGradFn, key=key)
 
     def __setitem__(self, key, value) -> None:
         self._assert_not_leaf()

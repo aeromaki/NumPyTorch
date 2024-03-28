@@ -81,6 +81,12 @@ class Sequential(Module):
             x = layer(x)
         return x
 
+class ModuleList(Module, list):
+    def __init__(self, modules: List[Module]) -> None:
+        super().__init__(modules)
+        for i, module in enumerate(modules):
+            setattr(self, str(i), module)
+
 class ReLU(Module):
     @staticmethod
     def forward(x: Tensor) -> Tensor:
@@ -114,9 +120,8 @@ class LayerNorm(Module):
         self.gamma = Parameter.new_scalar()
         self.beta = Parameter.new_scalar()
 
-    def forward(x: Tensor) -> Tensor:
-        return (x - mean(x, -1, keepdims=True)) / (var(x) + self.eps) ** 0.5 * self.gamma + self.beta
-
+    def forward(self, x: Tensor) -> Tensor:
+        return (x - mean(x, -1, keepdims=True)) / (var(x, -1) + self.eps) ** 0.5 * self.gamma + self.beta
 
 class _AttentionProjector(Module):
     def __init__(
@@ -220,8 +225,8 @@ class TransformerEncoderLayer(Module):
         h_self = self.att_self(q, q, q, mask_q, mask_q)
         res_self = self.layernorm0(q + h_self)
 
-        h_ff = self.ff(res_cross)
-        res = self.layernorm1(res_cross + h_ff)
+        h_ff = self.ff(res_self)
+        res = self.layernorm1(res_self + h_ff)
 
         return res
 
@@ -282,7 +287,7 @@ class TransformerEncoder(Module):
     ) -> Tensor:
         h = q
         for layer in self.layers:
-            h = layer(h, h, mask_q)
+            h = layer(h, mask_q)
         return h
 
 class TransformerDecoder(Module):
@@ -319,8 +324,8 @@ class Embedding(Module):
     ) -> None:
         self.embedding = Parameter.new(n_vocab, d_model)
 
-    def forward(seq: Tensor) -> Tensor:
-        return self.embedding(seq)
+    def forward(self, seq: Tensor) -> Tensor:
+        return self.embedding[seq]
 
 class Transformer(Module):
     def __init__(
@@ -341,20 +346,20 @@ class Transformer(Module):
 
     def forward(
         self,
-        q: Tensor,
-        k: Tensor,
-        mask_q: Optional[Tensor] = None,
-        mask_k: Optional[Tensor] = None,
+        e_ids: Tensor,
+        d_ids: Tensor,
+        mask_e: Optional[Tensor] = None,
+        mask_d: Optional[Tensor] = None,
         mask_tgt: Optional[Tensor] = None
     ) -> Tensor:
-        q = self.embed(q)
-        k = self.embed(k)
-        e_last_hidden_state = self.encoder(q, mask_q)
-        d_last_hidden_state = self.decoder(e_last_hidden_state, k, mask_q, mask_k, mask_tgt)
+        e = self.embed(e_ids)
+        d = self.embed(d_ids)
+        e_last_hidden_state = self.encoder(e, mask_e)
+        d_last_hidden_state = self.decoder(d, e_last_hidden_state, mask_d, mask_e, mask_tgt)
         return d_last_hidden_state
 
     def embed(self, x: Tensor) -> Tensor:
         assert x.shape[-1] <= self.max_len
-        e = self.embedding(x)
-        e = e + self.positional_embedding[:x.shape[-1], :]
-        return e
+        d = self.embedding(x)
+        d = d + self.positional_embedding[:x.shape[-1], :]
+        return d
