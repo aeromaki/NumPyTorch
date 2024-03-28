@@ -143,13 +143,9 @@ class MultiHeadAttention(Module):
         mask_q_mh = self._generate_mask(mask_q)
         mask_k_mh = self._generate_mask(mask_k)
 
+        q_mh = q_mh * mask_q_mh
+        k_mh = k_mh * mask_k_mh
         inn = q_mh @ transpose(k_mh)
-
-        if mask_q is not None:
-            inn = inn * unsqueeze(mask_q_mh, mask_q_mh.ndim+1)
-
-        if mask_k is not None:
-            inn = inn * unsqueeze(mask_k_mh, -1)
 
         if mask_tgt is not None:
             mask_tgt_ = ones(*mask_tgt.shape)
@@ -162,13 +158,12 @@ class MultiHeadAttention(Module):
         res = self.Wo(res)
         return res
 
-    def _generate_mask(self, mask: Optional[Tensor] = None) -> Tensor:
+    @staticmethod
+    def _generate_mask(mask: Optional[Tensor] = None) -> Tensor:
         if mask is not None:
             mask_mh = ones(*mask.shape)
             mask_mh[mask == 0] = -inf
-
-            batch_ones = [1] * len(mask.shape[:-1])
-            mask_mh = repeat(unsqueeze(mask_mh, 1), (*batch_ones, self.n_head, 1))
+            mask_mh = unsqueeze(unsqueeze(mask_mh, 1), mask_mh.ndim+1)
         else:
             mask_mh = None
         return mask_mh
