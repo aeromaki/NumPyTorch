@@ -366,6 +366,5 @@ class Transformer(Module):
 
     @staticmethod
     def create_tgt_mask(tgt_len: int) -> Tensor:
-        o = np.ones(len_seq, len_seq)
-        mask = tensor(np.triu(o))
+        mask = tensor(np.triu(np.ones((tgt_len, tgt_len))))
         return mask
