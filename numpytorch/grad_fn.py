@@ -93,13 +93,16 @@ class GradFn(ABC):
             if x.requires_grad:
                 if x.shape != dx.shape:
                     dx = self._handle_broadcast(x, dx)
+
                 # update grad
-                if x.grad is not None and x.is_leaf:
+                if x.grad is not None:
                     x.grad += dx
                 else:
                     x.grad = dx
+
+                x.grad_cnt -= 1
                 # call grad_fn for those parent tensors that have a grad_fn
-                if x.grad_fn is not None:
+                if x.grad_fn is not None and x.grad_cnt == 0:
                     x.grad_fn(x)
 
 

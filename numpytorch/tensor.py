@@ -43,6 +43,7 @@ class Tensor:
         self.is_leaf = is_leaf
         self.grad_fn = grad_fn
         self.grad: Optional[ndarray] = None
+        self.grad_cnt: Optional[int] = 0 if requires_grad else None
 
     @property
     def shape(self) -> Tuple[int, ...]:
@@ -90,6 +91,12 @@ class Tensor:
             new_requires_grad = True
             new_is_leaf = False
             new_grad_fn = grad_fn(self, o)
+
+            if self.requires_grad:
+                self.grad_cnt += 1
+            if o.requires_grad:
+                o.grad_cnt += 1
+
         else:
             # If neither of the tensors requires gradient, the new tensor will not require gradient and will be a leaf.
             new_requires_grad = False
@@ -230,6 +237,8 @@ class Tensor:
 
 
 def _new_tensor(x: Tensor, arr: ndarray, grad_fn: Type[GradFn], **kwargs: Any) -> Tensor:
+    if x.requires_grad:
+        x.grad_cnt += 1
     return Tensor(
         arr,
         requires_grad=x.requires_grad,
