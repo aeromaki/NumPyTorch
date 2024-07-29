@@ -4,16 +4,17 @@ from numpy import ndarray
 import math
 from typing import Any, Optional, Type
 
-from .tensor import _new_tensor
-from .tensor import *
-from .grad_fn import *
+from numpytorch.tensor import _ndfy, _new_tensor
+from numpytorch.tensor import *
+from numpytorch.autograd._functions import *
+from numpytorch.autograd._operators import *
 
 
 def tensor(
     v: Value | ndarray,
     requires_grad: bool = False
 ) -> Tensor:
-    v = ndfy(v).copy()
+    v = _ndfy(v).copy()
     return Tensor(v, requires_grad=requires_grad)
 
 def zeros(*args, requires_grad: bool = False, **kwargs) -> Tensor:

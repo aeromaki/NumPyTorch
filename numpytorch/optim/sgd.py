@@ -1,6 +1,6 @@
 from typing import Sequence
 
-from .tensor import Tensor
+from numpytorch.tensor import Tensor
 
 
 class SGD:

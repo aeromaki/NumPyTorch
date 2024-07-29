@@ -1,129 +1,14 @@
-from __future__ import annotations
+import numpy as np
 
-from typing import Any, Callable, Collection
+from typing import Optional
 
-from .tensor import Tensor, Value
-from .functions import *
-from . import inf
+from .base import Module, Parameter, Linear
+from .nodes import Sequential, ModuleList
+from .layernorm import LayerNorm
+from .functions import ReLU
+from numpytorch.tensor import Tensor
+from numpytorch.functions import reshape, transpose, ones, unsqueeze, tensor, softmax
 
-
-class Parameter(Tensor):
-    """
-    To manage the tensors used as parameters in the model separately,
-    we created this class that inherits from Tensor.
-    """
-    def __init__(self, x: Tensor) -> None:
-        super().__init__(arr=x, requires_grad=True)
-
-    def _init_weight(*args: int) -> Tensor:
-        # He Uniform Initialization
-        u = (6 / args[0])**0.5
-        return tensor(np.random.uniform(-u, u, size=args))
-
-    @staticmethod
-    def new(*args: int) -> Parameter:
-        return Parameter(Parameter._init_weight(*args))
-
-    @staticmethod
-    def new_scalar() -> Parameter:
-        return Parameter(rand())
-
-
-class Module:
-    """
-    A class for conveniently managing each layer, module, or model of a DNN.
-    If you want to create a new layer, you can create a subclass that inherits
-    from Module and just implement the forward method.
-    """
-    def _forward_unimplemented(*args, **kwargs) -> None:
-        raise Exception("forward not implemented")
-    forward: Callable[..., Any] = _forward_unimplemented
-
-    def __call__(self, *args, **kwargs) -> Any:
-        return self.forward(*args, **kwargs)
-
-    def parameters(self) -> list[Parameter]:
-        """
-        In order to optimize a model during training, the values of the parameters inside
-        the model must be constantly updated. This is done through the optimizer in optim.py,
-        which requires a list of all the parameters (Parameter) a model (or module) has.
-        If a Module contains other Modules as attributes, it will also return the parameters
-        of those Modules.
-        """
-        params: list[Parameter] = []
-        for v in self.__dict__.values():
-            if isinstance(v, Module):
-                params += v.parameters()
-            elif isinstance(v, Parameter):
-                params.append(v)
-        return params
-
-
-class Linear(Module):
-    def __init__(self, d_in: int, d_out: int, bias: bool = True) -> None:
-        self.w = Parameter.new(d_in, d_out)
-        self.b: Value = Parameter(zeros(d_out)) if bias else 0
-
-    def forward(self, x: Tensor) -> Tensor:
-        return x @ self.w + self.b
-
-class Sequential(Module):
-    """
-    It is often the case that multiple layers need to be applied in succession, each taking
-    a single tensor as input and returning a single tensor (e.g. CNN). It's tedious to assign
-    each layer an attribute for this process and apply each one directly in the forward, so we
-    can wrap it in a simple Module.
-    """
-    def __init__(self, *args) -> None:
-        for i, module in enumerate(args):
-            setattr(self, str(i), module)
-
-    def forward(self, x: Tensor) -> Tensor:
-        for layer in self.__dict__.values():
-            x = layer(x)
-        return x
-
-class ModuleList(Module, list):
-    def __init__(self, modules: Collection[Module]) -> None:
-        super().__init__(modules)
-        for i, module in enumerate(modules):
-            setattr(self, str(i), module)
-
-class ReLU(Module):
-    @staticmethod
-    def forward(x: Tensor) -> Tensor:
-        return relu(x)
-
-class Sigmoid(Module):
-    @staticmethod
-    def forward(x: Tensor) -> Tensor:
-        return sigmoid(x)
-
-class Tanh(Module):
-    @staticmethod
-    def forward(x: Tensor) -> Tensor:
-        return tanh(x)
-
-class CrossEntropyLoss(Module):
-    @staticmethod
-    def forward(logits: Tensor, q: Tensor) -> Tensor:
-        if logits.shape != q.shape:
-            q = one_hot(q, logits.shape[-1])
-        log_p = logits - log(sum(exp(logits), -1, keepdims=True))
-        ce = -sum(q * log_p, -1)
-        return mean(ce)
-
-class LayerNorm(Module):
-    def __init__(
-        self,
-        eps: float = 1e-05
-    ) -> None:
-        self.eps = eps
-        self.gamma = Parameter.new_scalar()
-        self.beta = Parameter.new_scalar()
-
-    def forward(self, x: Tensor) -> Tensor:
-        return (x - mean(x, -1, keepdims=True)) / (var(x, -1) + self.eps) ** 0.5 * self.gamma + self.beta
 
 class _AttentionProjector(Module):
     def __init__(
@@ -178,7 +63,7 @@ class MultiHeadAttention(Module):
 
         if mask_tgt is not None:
             mask_tgt_ = ones(*mask_tgt.shape)
-            mask_tgt_[mask_tgt == 0] = -inf
+            mask_tgt_[mask_tgt == 0] = -np.inf
             inn = inn * mask_tgt_
 
         att = softmax(inn / self.d_k ** 0.5) @ v_mh
@@ -191,7 +76,7 @@ class MultiHeadAttention(Module):
     def _generate_mask(mask: Optional[Tensor] = None) -> Tensor:
         if mask is not None:
             mask_mh = ones(*mask.shape)
-            mask_mh[mask == 0] = -inf
+            mask_mh[mask == 0] = -np.inf
             mask_mh = unsqueeze(unsqueeze(mask_mh, 1), mask_mh.ndim+1)
         else:
             mask_mh = None

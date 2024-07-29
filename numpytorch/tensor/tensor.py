@@ -8,7 +8,8 @@ from typing import (
     Self, TypeVar, ParamSpec, Concatenate
 )
 
-from .grad_fn import *
+from numpytorch.autograd import GradFn
+from numpytorch.autograd._operators import *
 
 
 _P = ParamSpec("_P")
@@ -19,7 +20,7 @@ Value = Union[float, 'Tensor']
 _NPOperation = Callable[[ndarray, ndarray], ndarray]
 _Operation = Callable[['Tensor', Value], 'Tensor']
 
-def ndfy(some: Value | ndarray) -> ndarray:
+def _ndfy(some: Value | ndarray) -> ndarray:
     if isinstance(some, Tensor):
         return some.arr
     elif isinstance(some, ndarray):
@@ -49,7 +50,7 @@ class Tensor:
         is_leaf: bool = True,
         grad_fn: Optional[GradFn] = None
     ) -> None:
-        self.arr = ndfy(arr).copy()
+        self.arr = _ndfy(arr).copy()
         self.requires_grad = requires_grad
         self.is_leaf = is_leaf
         self.grad_fn = grad_fn
