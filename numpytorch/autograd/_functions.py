@@ -31,6 +31,30 @@ class SumGradFn(GradFn):
         dx = np.ones_like(x.arr) * grad
         return (dx,)
 
+class MaxGradFn(GradFn):
+    def __init__(
+        self,
+        x: 'TensorNode',
+        axis: Optional[int | tuple[int, ...]] = None,
+        keepdims: bool = False
+    ) -> None:
+        super().__init__(x)
+        self.axis = axis
+        self.keepdims = keepdims
+
+    def f_d(self, *args: 'TensorNode') -> tuple[ndarray]:
+        x, y = args
+        assert y.grad is not None
+
+        if self.axis is not None and not self.keepdims:
+            y_ = np.expand_dims(y.arr, self.axis)
+            grad = np.expand_dims(y.grad, self.axis)
+        else:
+            y_ = y.arr
+            grad = y.grad
+        dx = (x.arr == y_).astype(float) * grad
+        return (dx,)
+
 class ReLUGradFn(GradFn):
     def __init__(self, x: 'TensorNode') -> None:
         super().__init__(x)
@@ -101,7 +125,6 @@ class RepeatGradFn(GradFn):
         assert y.grad is not None
 
         dx = y.grad.reshape(*x.shape, -1).sum(-1)
-
         return (dx,)
 
 class TransposeGradFn(GradFn):
@@ -114,5 +137,4 @@ class TransposeGradFn(GradFn):
         assert y.grad is not None
 
         dx = np.swapaxes(y.grad, *self.axes)
-
         return (dx,)

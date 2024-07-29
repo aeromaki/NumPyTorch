@@ -12,11 +12,11 @@ import numpy as np
 
 n_vocab = 30522
 d_model = 32
-d_k = 16
-d_v = 16
+d_k = 8
+d_v = 8
 n_head = 2
-n_layer = 1
-max_len = 1024
+n_layer = 2
+max_len = 64
 batch_size = 2
 
 
@@ -53,7 +53,7 @@ class Tokenizer:
             return_tensors="np",
             padding="max_length"
         ).values()
-        return npt.tensor(input_ids), npt.tensor(attn_mask)
+        return npt.tensor(input_ids)[..., :max_len], npt.tensor(attn_mask)[..., :max_len]
 
 
 tokenizer = Tokenizer()
@@ -71,13 +71,19 @@ for i in tqdm(range(127085//batch_size)):
 
     optimizer.zero_grad()
 
-    logits = model(x_ids, y_ids, x_mask, y_mask, nn.Transformer.create_tgt_mask(x_ids.shape[-1]))
+    logits = model(
+        x_ids,
+        y_ids[..., :-1],
+        x_mask,
+        y_mask[..., :-1],
+        nn.Transformer.create_tgt_mask(y_ids.shape[-1] - 1)
+    )
 
     logit_mask = npt.ones(*logits.shape)
     logit_mask[y_mask == 0] = -npt.inf
     logits = logits * logit_mask
 
-    loss = criterion(logits, y_ids)
+    loss = criterion(logits, y_ids[..., 1:])
     loss.backward()
     print(loss.item())
 

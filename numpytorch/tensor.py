@@ -5,7 +5,7 @@ from numpy import ndarray
 
 from typing import (
     Callable, Optional, Type, Union,
-    Self, TypeVar, ParamSpec, Concatenate
+    TypeVar, ParamSpec
 )
 
 from .grad_fn import *

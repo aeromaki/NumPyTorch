@@ -5,7 +5,7 @@ from numpy import ndarray
 
 from typing import (
     Callable, Optional, Type, Union,
-    Self, TypeVar, ParamSpec, Concatenate
+    TypeVar, ParamSpec, Concatenate
 )
 
 from numpytorch.autograd import GradFn

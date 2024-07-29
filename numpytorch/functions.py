@@ -51,6 +51,10 @@ def mean(x: Tensor, axis: Optional[int] = None, keepdims: bool = False) -> Tenso
     else:
         return sum(x, axis, keepdims) / x.shape[axis]
 
+def max(x: Tensor, axis: Optional[int | tuple[int, ...]] = None, keepdims: bool = False) -> Tensor:
+    return _new_tensor(x, x.arr.mean(axis, keepdims=keepdims), MaxGradFn,
+                        axis=axis, keepdims=keepdims)
+
 def var(x: Tensor, axis: int) -> Tensor:
     return mean(x**2, axis, keepdims=True) - mean(x, axis, keepdims=True)**2
 

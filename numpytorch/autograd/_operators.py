@@ -119,7 +119,6 @@ class GetitemGradFn(GradFn):
 
         dx = np.zeros_like(x.arr)
         dx[self.key] = y.grad
-
         return (dx,)
 
 class SetitemGradFn(GradFn):
@@ -133,7 +132,6 @@ class SetitemGradFn(GradFn):
 
         dx = y.grad
         dx[self.key] = 0
-
         return (dx,)
 
 class SetitemTensorGradFn(GradFn):
@@ -149,5 +147,4 @@ class SetitemTensorGradFn(GradFn):
 
         dx = y.grad
         dx[self.key] = 0
-
         return (dx, d_value)

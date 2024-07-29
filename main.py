@@ -39,11 +39,13 @@ def val(model: nn.Module, x_val: ndarray, y_val: ndarray) -> tuple[float, float]
 if __name__ == '__main__':
     x_train, y_train, x_val, y_val = get_mnist()
 
+    ### edits allowed here ###
     n_batch = 32
     n_iter = 50000
     n_print = 100
     n_val = 2000
     lr = 1e-03
+    ##########################
 
     model = MNISTClassificationModel()
     criterion = nn.CrossEntropyLoss()
