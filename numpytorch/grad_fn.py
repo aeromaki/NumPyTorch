@@ -6,7 +6,7 @@ from numpy import ndarray
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
-    Callable, Optional, Tuple, Union
+    Callable, Optional
 )
 if TYPE_CHECKING:
     from .tensor import Tensor
@@ -27,7 +27,7 @@ class GradFn(ABC):
     to update their values via gradient descent).
 
     Attributes:
-        tensors (Tuple['Tensor', ...]): The parent tensors of the tensor with this GradFn as Tensor.grad_fn.
+        tensors (tuple['Tensor', ...]): The parent tensors of the tensor with this GradFn as Tensor.grad_fn.
                                         Since this function computes the gradient of its parent tensors, not itself,
                                         we need to store the parent tensors.
     """
@@ -40,13 +40,13 @@ class GradFn(ABC):
         the computation, when creating GradFn for a child tensor, you can include its parent tensors in __init__
         to save them.
         """
-        self.tensors: Tuple['Tensor', ...] = args
+        self.tensors: tuple['Tensor', ...] = args
 
     def __call__(self, y: 'Tensor') -> None:
         self.propagate(y)
 
     @abstractmethod
-    def f_d(self, *args: 'Tensor') -> Tuple[ndarray, ...]:
+    def f_d(self, *args: 'Tensor') -> tuple[ndarray, ...]:
         """
         GradFn is an abstract base class that provides a uniform backpropagation process for all backpropagation
         functions. Since how the gradient is actually computed depends on what the corresponding forward operation
@@ -56,7 +56,7 @@ class GradFn(ABC):
         Args:
             *args (Tensor): Parent tensors and itself (Tensor).
         """
-        pass
+        ...
 
     @staticmethod
     def _handle_broadcast(x: 'Tensor', dx: ndarray) -> ndarray:
@@ -89,7 +89,7 @@ class GradFn(ABC):
                         On the computation graph, it is the child tensor that result from the operation.
         """
         # compute the gradient of the parent tensors with self.f_d
-        grads: Tuple[ndarray, ...] = self.f_d(*self.tensors, y)
+        grads: tuple[ndarray, ...] = self.f_d(*self.tensors, y)
         for x, dx in zip(self.tensors, grads):
             # for parent tensors with requires_grad=True
             if x.requires_grad:
@@ -112,14 +112,14 @@ class SumGradFn(GradFn):
     def __init__(
         self,
         x: 'Tensor',
-        axis: Optional[Union[int, Tuple[int, ...]]] = None,
+        axis: Optional[int | tuple[int, ...]] = None,
         keepdims: bool = False
     ) -> None:
         super().__init__(x)
         self.axis = axis
         self.keepdims = keepdims
 
-    def f_d(self, *args: 'Tensor') -> Tuple[ndarray]:
+    def f_d(self, *args: 'Tensor') -> tuple[ndarray]:
         x, y = args
         assert y.grad is not None
 
@@ -135,7 +135,7 @@ class ReLUGradFn(GradFn):
         super().__init__(x)
 
     @staticmethod
-    def f_d(*args: 'Tensor') -> Tuple[ndarray]:
+    def f_d(*args: 'Tensor') -> tuple[ndarray]:
         x, y = args
         assert y.grad is not None
 
@@ -147,7 +147,7 @@ class LogGradFn(GradFn):
         super().__init__(x)
 
     @staticmethod
-    def f_d(*args: 'Tensor') -> Tuple[ndarray]:
+    def f_d(*args: 'Tensor') -> tuple[ndarray]:
         x, y = args
         assert y.grad is not None
 
@@ -159,7 +159,7 @@ class SigmoidGradFn(GradFn):
         super().__init__(x)
 
     @staticmethod
-    def f_d(*args: 'Tensor') -> Tuple[ndarray]:
+    def f_d(*args: 'Tensor') -> tuple[ndarray]:
         x, y = args
         assert y.grad is not None
 
@@ -171,7 +171,7 @@ class TanhGradFn(GradFn):
         super().__init__(x)
 
     @staticmethod
-    def f_d(*args: 'Tensor') -> Tuple[ndarray]:
+    def f_d(*args: 'Tensor') -> tuple[ndarray]:
         x, y = args
         assert y.grad is not None
 
@@ -183,7 +183,7 @@ class ReshapeGradFn(GradFn):
         super().__init__(x)
 
     @staticmethod
-    def f_d(*args: 'Tensor') -> Tuple[ndarray]:
+    def f_d(*args: 'Tensor') -> tuple[ndarray]:
         x, y = args
         assert y.grad is not None
 
@@ -195,7 +195,7 @@ class AddGradFn(GradFn):
         super().__init__(x0, x1)
 
     @staticmethod
-    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
+    def f_d(*args: 'Tensor') -> tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 
@@ -208,7 +208,7 @@ class SubGradFn(GradFn):
         super().__init__(x0, x1)
 
     @staticmethod
-    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
+    def f_d(*args: 'Tensor') -> tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 
@@ -221,7 +221,7 @@ class MulGradFn(GradFn):
         super().__init__(x0, x1)
 
     @staticmethod
-    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
+    def f_d(*args: 'Tensor') -> tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 
@@ -234,7 +234,7 @@ class DivGradFn(GradFn):
         super().__init__(x0, x1)
 
     @staticmethod
-    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
+    def f_d(*args: 'Tensor') -> tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 
@@ -247,7 +247,7 @@ class PowGradFn(GradFn):
         super().__init__(x0, x1)
 
     @staticmethod
-    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
+    def f_d(*args: 'Tensor') -> tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
         # assert (x0.arr > 0).all()
@@ -262,7 +262,7 @@ class MatmulGradFn(GradFn):
         super().__init__(x0, x1)
 
     @staticmethod
-    def f_d(*args: 'Tensor') -> Tuple[ndarray, ndarray]:
+    def f_d(*args: 'Tensor') -> tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 
@@ -291,7 +291,7 @@ class GetitemGradFn(GradFn):
         super().__init__(x)
         self.key = key
 
-    def f_d(self, *args: 'Tensor') -> Tuple[ndarray]:
+    def f_d(self, *args: 'Tensor') -> tuple[ndarray]:
         x, y = args
         assert y.grad is not None
 
@@ -305,7 +305,7 @@ class RepeatGradFn(GradFn):
         super().__init__(x)
 
     @staticmethod
-    def f_d(*args: 'Tensor') -> Tuple[ndarray]:
+    def f_d(*args: 'Tensor') -> tuple[ndarray]:
         x, y = args
         assert y.grad is not None
 
@@ -314,11 +314,11 @@ class RepeatGradFn(GradFn):
         return (dx,)
 
 class TransposeGradFn(GradFn):
-    def __init__(self, x: 'Tensor', axes: Tuple[int, int]) -> None:
+    def __init__(self, x: 'Tensor', axes: tuple[int, int]) -> None:
         super().__init__(x)
         self.axes = axes
 
-    def f_d(self, *args: 'Tensor') -> Tuple[ndarray]:
+    def f_d(self, *args: 'Tensor') -> tuple[ndarray]:
         x, y = args
         assert y.grad is not None
 

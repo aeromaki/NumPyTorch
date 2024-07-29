@@ -1,4 +1,3 @@
-from typing import Tuple
 import gzip
 import numpy as np
 from numpy import ndarray
@@ -10,7 +9,7 @@ from numpytorch import tensor, nn, optim
 from assignment import MNISTClassificationModel
 
 
-def get_mnist() -> Tuple[ndarray, ndarray, ndarray, ndarray]:
+def get_mnist() -> tuple[ndarray, ndarray, ndarray, ndarray]:
     path_x = 'data/train-images-idx3-ubyte.gz'
     path_y = 'data/train-labels-idx1-ubyte.gz'
 
@@ -27,7 +26,7 @@ def get_mnist() -> Tuple[ndarray, ndarray, ndarray, ndarray]:
     return (x_train, y_train, x_val, y_val)
 
 
-def val(model: nn.Module, x_val: ndarray, y_val: ndarray) -> Tuple[float, float]:
+def val(model: nn.Module, x_val: ndarray, y_val: ndarray) -> tuple[float, float]:
     preds = []
     for i in range(0, len(x_val), 32):
         x = tensor(x_val[i:i+32])
