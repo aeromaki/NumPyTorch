@@ -4,8 +4,8 @@ from numpy import ndarray
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from numpytorch.tensor import Tensor
-from .base import GradFn
+    from numpytorch.tensor import TensorNode
+from .grad_fn import GradFn
 
 
 def _clip_eps(x: ndarray, eps: float = 1e-06) -> ndarray:
@@ -13,11 +13,11 @@ def _clip_eps(x: ndarray, eps: float = 1e-06) -> ndarray:
 
 
 class AddGradFn(GradFn):
-    def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
+    def __init__(self, x0: 'TensorNode', x1: 'TensorNode') -> None:
         super().__init__(x0, x1)
 
     @staticmethod
-    def f_d(*args: 'Tensor') -> tuple[ndarray, ndarray]:
+    def f_d(*args: 'TensorNode') -> tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 
@@ -26,11 +26,11 @@ class AddGradFn(GradFn):
         return dx0, dx1
 
 class SubGradFn(GradFn):
-    def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
+    def __init__(self, x0: 'TensorNode', x1: 'TensorNode') -> None:
         super().__init__(x0, x1)
 
     @staticmethod
-    def f_d(*args: 'Tensor') -> tuple[ndarray, ndarray]:
+    def f_d(*args: 'TensorNode') -> tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 
@@ -39,11 +39,11 @@ class SubGradFn(GradFn):
         return dx0, dx1
 
 class MulGradFn(GradFn):
-    def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
+    def __init__(self, x0: 'TensorNode', x1: 'TensorNode') -> None:
         super().__init__(x0, x1)
 
     @staticmethod
-    def f_d(*args: 'Tensor') -> tuple[ndarray, ndarray]:
+    def f_d(*args: 'TensorNode') -> tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 
@@ -52,11 +52,11 @@ class MulGradFn(GradFn):
         return dx0, dx1
 
 class DivGradFn(GradFn):
-    def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
+    def __init__(self, x0: 'TensorNode', x1: 'TensorNode') -> None:
         super().__init__(x0, x1)
 
     @staticmethod
-    def f_d(*args: 'Tensor') -> tuple[ndarray, ndarray]:
+    def f_d(*args: 'TensorNode') -> tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 
@@ -65,11 +65,11 @@ class DivGradFn(GradFn):
         return dx0, dx1
 
 class PowGradFn(GradFn):
-    def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
+    def __init__(self, x0: 'TensorNode', x1: 'TensorNode') -> None:
         super().__init__(x0, x1)
 
     @staticmethod
-    def f_d(*args: 'Tensor') -> tuple[ndarray, ndarray]:
+    def f_d(*args: 'TensorNode') -> tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
         # assert (x0.arr > 0).all()
@@ -80,11 +80,11 @@ class PowGradFn(GradFn):
         return dx0, dx1
 
 class MatmulGradFn(GradFn):
-    def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
+    def __init__(self, x0: 'TensorNode', x1: 'TensorNode') -> None:
         super().__init__(x0, x1)
 
     @staticmethod
-    def f_d(*args: 'Tensor') -> tuple[ndarray, ndarray]:
+    def f_d(*args: 'TensorNode') -> tuple[ndarray, ndarray]:
         x0, x1, y = args
         assert y.grad is not None
 
@@ -93,27 +93,27 @@ class MatmulGradFn(GradFn):
         return dx0, dx1
 
 class RSubGradFn(SubGradFn):
-    def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
+    def __init__(self, x0: 'TensorNode', x1: 'TensorNode') -> None:
         super().__init__(x1, x0)
 
 class RDivGradFn(DivGradFn):
-    def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
+    def __init__(self, x0: 'TensorNode', x1: 'TensorNode') -> None:
         super().__init__(x1, x0)
 
 class RPowGradFn(PowGradFn):
-    def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
+    def __init__(self, x0: 'TensorNode', x1: 'TensorNode') -> None:
         super().__init__(x1, x0)
 
 class RMatmulGradFn(MatmulGradFn):
-    def __init__(self, x0: 'Tensor', x1: 'Tensor') -> None:
+    def __init__(self, x0: 'TensorNode', x1: 'TensorNode') -> None:
         super().__init__(x1, x0)
 
 class GetitemGradFn(GradFn):
-    def __init__(self, x: 'Tensor', key) -> None:
+    def __init__(self, x: 'TensorNode', key) -> None:
         super().__init__(x)
         self.key = key
 
-    def f_d(self, *args: 'Tensor') -> tuple[ndarray]:
+    def f_d(self, *args: 'TensorNode') -> tuple[ndarray]:
         x, y = args
         assert y.grad is not None
 
@@ -123,51 +123,31 @@ class GetitemGradFn(GradFn):
         return (dx,)
 
 class SetitemGradFn(GradFn):
-    def __init__(self, key, grad_fn: GradFn) -> None:
-        super().__init__(*grad_fn.tensors)
-        self.key = key
-        self.inner_f_d = grad_fn.f_d
-
-    def f_d(self, *args: 'Tensor') -> tuple[ndarray, ...]:
-        y = args[-1]
-        assert y.grad is not None
-
-        grad = y.grad
-        y.grad[self.key] = 0
-
-        dxs = self.inner_f_d(*args)
-        y.grad = grad
-
-        return dxs
-
-class SetitemTensorGradFn(GradFn):
-    def __init__(self, value: 'Tensor', key, grad_fn: GradFn) -> None:
-        super().__init__(value, *grad_fn.tensors)
-        self.key = key
-        self.inner_f_d = grad_fn.f_d
-
-    def f_d(self, *args: 'Tensor') -> tuple[ndarray, ...]:
-        value, y = args[0], args[-1]
-        assert y.grad is not None
-
-        grad = y.grad
-        d_value: ndarray = y.grad[self.key].reshape(value.shape)
-        y.grad[self.key] = 0
-
-        dxs = self.inner_f_d(*args[1:])
-        y.grad = grad
-
-        return (d_value, *dxs)
-
-class TransposeGradFn(GradFn):
-    def __init__(self, x: 'Tensor', axes: tuple[int, int]) -> None:
+    def __init__(self, x: 'TensorNode', key) -> None:
         super().__init__(x)
-        self.axes = axes
+        self.key = key
 
-    def f_d(self, *args: 'Tensor') -> tuple[ndarray]:
+    def f_d(self, *args: 'TensorNode') -> tuple[ndarray]:
         x, y = args
         assert y.grad is not None
 
-        dx = np.swapaxes(y.grad, *self.axes)
+        dx = y.grad
+        dx[self.key] = 0
 
         return (dx,)
+
+class SetitemTensorGradFn(GradFn):
+    def __init__(self, x: 'TensorNode', value: 'TensorNode', key) -> None:
+        super().__init__(x, value)
+        self.key = key
+
+    def f_d(self, *args: 'TensorNode') -> tuple[ndarray, ...]:
+        x, value, y = args
+        assert y.grad is not None
+
+        d_value: ndarray = y.grad[self.key].reshape(value.shape)
+
+        dx = y.grad
+        dx[self.key] = 0
+
+        return (dx, d_value)

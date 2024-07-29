@@ -1,4 +1,4 @@
-from .base import Module
+from .module import Module
 from numpytorch.functions import *
 
 

@@ -1,16 +1,14 @@
+from __future__ import annotations
+
 import numpy as np
 
 from typing import Any, Callable
 
 from numpytorch.tensor import Tensor, Value
-from numpytorch.functions import *
+from numpytorch.functions import tensor, rand, zeros
 
 
 class Parameter(Tensor):
-    """
-    To manage the tensors used as parameters in the model separately,
-    we created this class that inherits from Tensor.
-    """
     def __init__(self, x: Tensor) -> None:
         super().__init__(arr=x, requires_grad=True)
 
@@ -29,11 +27,6 @@ class Parameter(Tensor):
 
 
 class Module:
-    """
-    A class for conveniently managing each layer, module, or model of a DNN.
-    If you want to create a new layer, you can create a subclass that inherits
-    from Module and just implement the forward method.
-    """
     def _forward_unimplemented(*args, **kwargs) -> None:
         raise Exception("forward not implemented")
     forward: Callable[..., Any] = _forward_unimplemented
@@ -42,13 +35,6 @@ class Module:
         return self.forward(*args, **kwargs)
 
     def parameters(self) -> list[Parameter]:
-        """
-        In order to optimize a model during training, the values of the parameters inside
-        the model must be constantly updated. This is done through the optimizer in optim.py,
-        which requires a list of all the parameters (Parameter) a model (or module) has.
-        If a Module contains other Modules as attributes, it will also return the parameters
-        of those Modules.
-        """
         params: list[Parameter] = []
         for v in self.__dict__.values():
             if isinstance(v, Module):

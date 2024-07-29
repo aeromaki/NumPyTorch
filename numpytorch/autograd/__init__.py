@@ -1,1 +1,1 @@
-from .base import GradFn
+from .grad_fn import GradFn

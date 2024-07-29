@@ -7,7 +7,6 @@ from typing import Any, Optional, Type
 from numpytorch.tensor import _ndfy, _new_tensor
 from numpytorch.tensor import *
 from numpytorch.autograd._functions import *
-from numpytorch.autograd._operators import *
 
 
 def tensor(

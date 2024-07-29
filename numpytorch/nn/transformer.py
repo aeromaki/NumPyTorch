@@ -2,8 +2,8 @@ import numpy as np
 
 from typing import Optional
 
-from .base import Module, Parameter, Linear
-from .nodes import Sequential, ModuleList
+from .module import Module, Parameter, Linear
+from .cols import Sequential, ModuleList
 from .layernorm import LayerNorm
 from .functions import ReLU
 from numpytorch.tensor import Tensor

@@ -15,23 +15,23 @@ from numpytorch.autograd._operators import *
 _P = ParamSpec("_P")
 _T = TypeVar("_T")
 
-Value = Union[float, '_TensorNode']
+NodeValue = Union[float, 'TensorNode']
 
 _NPOperation = Callable[[ndarray, ndarray], ndarray]
-_Operation = Callable[['_TensorNode', Value], '_TensorNode']
+_Operation = Callable[['TensorNode', NodeValue], 'TensorNode']
 
-def _ndfy(some: Value | ndarray) -> ndarray:
-    if isinstance(some, _TensorNode):
+def _ndfy(some: NodeValue | ndarray) -> ndarray:
+    if hasattr(some, "arr"):
         return some.arr
     elif isinstance(some, ndarray):
         return some
     else:
         return np.array(some)
 
-class _TensorNode:
+class TensorNode:
     def __init__(
         self,
-        arr: float | ndarray | _TensorNode,
+        arr: float | ndarray | TensorNode,
         requires_grad: bool = False,
         is_leaf: bool = True,
         grad_fn: Optional[GradFn] = None
@@ -65,18 +65,17 @@ class _TensorNode:
         self.grad = np.ones(())
         self.grad_fn(self)
 
-    def _create_new_tensor(
+    def _create_new_tensornode(
         self,
-        o: Value,
+        o: NodeValue,
         operation: _NPOperation,
         grad_fn: Type[GradFn]
-    ) -> _TensorNode:
-        if not isinstance(o, _TensorNode):
-            o = _TensorNode(o)
+    ) -> TensorNode:
+        if not isinstance(o, TensorNode):
+            o = TensorNode(o)
 
-        new_arr = operation(self.arr, o.arr) # Apply the operation on the arrays
+        new_arr = operation(self.arr, o.arr)
 
-        # If either of the tensors requires gradient, the new tensor will also require gradient and will not be a leaf.
         if self.requires_grad or o.requires_grad:
             new_requires_grad = True
             new_is_leaf = False
@@ -88,25 +87,23 @@ class _TensorNode:
                 o.grad_cnt += 1
 
         else:
-            # If neither of the tensors requires gradient, the new tensor will not require gradient and will be a leaf.
             new_requires_grad = False
             new_is_leaf = True
             new_grad_fn = None
 
-        # Create the new tensor with the result of the operation
-        new_tensor = _TensorNode(
+        new_TensorNode = TensorNode(
             arr=new_arr,
             requires_grad=new_requires_grad,
             is_leaf=new_is_leaf,
             grad_fn=new_grad_fn
         )
 
-        return new_tensor
+        return new_TensorNode
 
     @staticmethod
     def _operation(grad_fn: Type[GradFn], operation: _NPOperation) -> _Operation:
-        def new_operation(self: _TensorNode, o: Value) -> _TensorNode:
-            return self._create_new_tensor(o, operation, grad_fn)
+        def new_operation(self: TensorNode, o: NodeValue) -> TensorNode:
+            return self._create_new_tensornode(o, operation, grad_fn)
         return new_operation
 
     __add__ = _operation(AddGradFn, lambda x, y: x + y)
@@ -127,76 +124,52 @@ class _TensorNode:
     __matmul__ = _operation(MatmulGradFn, lambda x, y: x @ y)
     __rmatmul__ = _operation(RMatmulGradFn, lambda x, y: y @ x)
 
-    def __pos__(self) -> _TensorNode:
+    def __pos__(self) -> TensorNode:
         return self
-    def __neg__(self) -> _TensorNode:
+    def __neg__(self) -> TensorNode:
         return 0 - self
 
     @staticmethod
-    def _assert_not_leaf(method: Callable[Concatenate[_TensorNode, _P], _T]) -> Callable[Concatenate[_TensorNode, _P], _T]:
-        def new_f(self: _TensorNode, *args: _P.args, **kwargs: _P.kwargs) -> _T:
+    def _assert_not_leaf(method: Callable[Concatenate[TensorNode, _P], _T]) -> Callable[Concatenate[TensorNode, _P], _T]:
+        def new_f(self: TensorNode, *args: _P.args, **kwargs: _P.kwargs) -> _T:
             if self.requires_grad:
                 assert not self.is_leaf
             return method(self, *args, **kwargs)
         return new_f
 
     @_assert_not_leaf
-    def __iadd__(self, o: Value) -> _TensorNode:
+    def __iadd__(self, o: NodeValue) -> TensorNode:
         return self + o
 
     @_assert_not_leaf
-    def __isub__(self, o: Value) -> _TensorNode:
+    def __isub__(self, o: NodeValue) -> TensorNode:
         return self - o
 
     @_assert_not_leaf
-    def __imul__(self, o: Value) -> _TensorNode:
+    def __imul__(self, o: NodeValue) -> TensorNode:
         return self * o
 
     @_assert_not_leaf
-    def __itruediv__(self, o: Value) -> _TensorNode:
+    def __itruediv__(self, o: NodeValue) -> TensorNode:
         return self / o
 
     @_assert_not_leaf
-    def __ipow__(self, o: Value) -> _TensorNode:
+    def __ipow__(self, o: NodeValue) -> TensorNode:
         return self ** o
 
     @_assert_not_leaf
-    def __imatmul__(self, o: _TensorNode) -> _TensorNode:
+    def __imatmul__(self, o: TensorNode) -> TensorNode:
         return self @ o
 
-    def __getitem__(self, key) -> _TensorNode:
-        key = key.arr if isinstance(key, _TensorNode) else key
-        return _new_tensor(self, self.arr[key], GetitemGradFn, key=key)
-
-    @_assert_not_leaf
-    def __setitem__(self, key, value: Value) -> None:
-        if isinstance(value, _TensorNode):
-            self.arr[key] = value.arr
-        else:
-            self.arr[key] = value
-
-        if self.grad_fn is not None:
-            past_self = _TensorNode(self, requires_grad=True, grad_fn=self.grad_fn)
-            self.grad_cnt += 1
-            if isinstance(value, _TensorNode) and value.requires_grad:
-                self.grad_fn = SetitemTensorGradFn(value, key, self.grad_fn)
-            else:
-                self.grad_fn = SetitemGradFn(key, self.grad_fn)
-
-    def __str__(self) -> str:
-        arr = str(self.arr)
-        req_grad = ", requires_grad=True" if self.requires_grad else ""
-        grad_fn = f", grad_fn={self.grad_fn.__class__.__name__}" if self.grad_fn is not None else ""
-        return f"_TensorNode({arr}{req_grad}{grad_fn})"
-
-    def __repr__(self) -> str:
-        return self.__str__()
+    def __getitem__(self, key) -> TensorNode:
+        key = key.arr if hasattr(key, 'arr') else key
+        return _new_tensornode(self, self.arr[key], GetitemGradFn, key=key)
 
 
-def _new_tensor(x: _TensorNode, arr: ndarray, grad_fn: Type[GradFn], **kwargs) -> _TensorNode:
+def _new_tensornode(x: TensorNode, arr: ndarray, grad_fn: Type[GradFn], **kwargs) -> TensorNode:
     if x.requires_grad:
         x.grad_cnt += 1
-    return _TensorNode(
+    return TensorNode(
         arr,
         requires_grad=x.requires_grad,
         is_leaf=not x.requires_grad,

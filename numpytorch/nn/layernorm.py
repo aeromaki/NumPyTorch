@@ -1,4 +1,4 @@
-from .base import Module, Parameter
+from .module import Module, Parameter
 from numpytorch.tensor import Tensor
 from numpytorch.functions import mean, var
 
