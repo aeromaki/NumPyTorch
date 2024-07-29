@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, List
+from typing import Any, Callable, Collection
 
 from .tensor import Tensor, Value
 from .functions import *
@@ -42,7 +42,7 @@ class Module:
     def __call__(self, *args, **kwargs) -> Any:
         return self.forward(*args, **kwargs)
 
-    def parameters(self) -> List[Parameter]:
+    def parameters(self) -> list[Parameter]:
         """
         In order to optimize a model during training, the values of the parameters inside
         the model must be constantly updated. This is done through the optimizer in optim.py,
@@ -50,7 +50,7 @@ class Module:
         If a Module contains other Modules as attributes, it will also return the parameters
         of those Modules.
         """
-        params: List[Parameter] = []
+        params: list[Parameter] = []
         for v in self.__dict__.values():
             if isinstance(v, Module):
                 params += v.parameters()
@@ -84,7 +84,7 @@ class Sequential(Module):
         return x
 
 class ModuleList(Module, list):
-    def __init__(self, modules: List[Module]) -> None:
+    def __init__(self, modules: Collection[Module]) -> None:
         super().__init__(modules)
         for i, module in enumerate(modules):
             setattr(self, str(i), module)
