@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 import numpy as np
 from numpy import ndarray
+
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
@@ -303,7 +305,7 @@ class RepeatGradFn(GradFn):
         super().__init__(x)
 
     @staticmethod
-    def f_d(self, *args: 'Tensor') -> Tuple[ndarray]:
+    def f_d(*args: 'Tensor') -> Tuple[ndarray]:
         x, y = args
         assert y.grad is not None
 

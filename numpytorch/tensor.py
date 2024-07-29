@@ -1,14 +1,16 @@
 from __future__ import annotations
+
 import numpy as np
 from numpy import ndarray
+
 from typing import Callable, Optional, Type, Union
-from typing import SupportsFloat as Numeric
+
 from .grad_fn import *
 
 
-Value = Union[Numeric, 'Tensor']
+Value = Union[float, 'Tensor']
 
-def ndfy(some: Union[Value, ndarray]) -> ndarray:
+def ndfy(some: Value | ndarray) -> ndarray:
     if isinstance(some, Tensor):
         return some.arr
     elif isinstance(some, ndarray):
@@ -33,7 +35,7 @@ class Tensor:
     """
     def __init__(
         self,
-        arr: Union[Numeric, ndarray, Tensor],
+        arr: float | ndarray | Tensor,
         requires_grad: bool = False,
         is_leaf: bool = True,
         grad_fn: Optional[GradFn] = None
@@ -43,10 +45,10 @@ class Tensor:
         self.is_leaf = is_leaf
         self.grad_fn = grad_fn
         self.grad: Optional[ndarray] = None
-        self.grad_cnt: Optional[int] = 0 if requires_grad else None
+        self.grad_cnt = 0
 
     @property
-    def shape(self) -> Tuple[int, ...]:
+    def shape(self) -> tuple[int, ...]:
         return self.arr.shape
 
     @property
@@ -57,7 +59,7 @@ class Tensor:
     def ndim(self) -> int:
         return self.arr.ndim
 
-    def item(self) -> Numeric:
+    def item(self) -> float:
         return self.arr.item()
 
     def _create_new_tensor(
@@ -236,7 +238,7 @@ class Tensor:
         return self.__str__()
 
 
-def _new_tensor(x: Tensor, arr: ndarray, grad_fn: Type[GradFn], **kwargs: Any) -> Tensor:
+def _new_tensor(x: Tensor, arr: ndarray, grad_fn: Type[GradFn], **kwargs) -> Tensor:
     if x.requires_grad:
         x.grad_cnt += 1
     return Tensor(

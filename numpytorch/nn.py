@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from typing import Any, Callable, List
+
 from .tensor import Tensor, Value
 from .functions import *
 from . import inf

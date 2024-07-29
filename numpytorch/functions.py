@@ -1,7 +1,9 @@
 import numpy as np
 from numpy import ndarray
+
 import math
 from typing import Any, Optional, Tuple, Type, Union
+
 from .tensor import _new_tensor
 from .tensor import *
 from .grad_fn import *
